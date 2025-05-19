@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f3f4f6;
+}
+
+/* Custom styling for react-phone-input-2 to work with Tailwind */
+.react-tel-input .form-control {
+  @apply w-full  !important;
+}
+
+.react-tel-input {
+  @apply w-full !important;
+}
+
+.react-tel-input-container .react-tel-input .selected-flag:hover,
+.react-tel-input-container .react-tel-input .selected-flag:focus {
+  @apply bg-gray-50 gap-2;
+}
+
+.react-tel-input-container .country-list .country.highlight {
+  @apply bg-yellow-100;
+}
+
+.react-tel-input-container .country-list .country:hover {
+  @apply bg-gray-50;
+}
+
+/* Leaflet Map Styles (replacing HERE Map Styles) */
+.here-map-container {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.here-map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Custom Leaflet Controls */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-control-zoom a {
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  border-radius: 4px !important;
+  background-color: #ffffff !important;
+  color: #555555 !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.leaflet-control-zoom a:first-child {
+  border-top-left-radius: 4px !important;
+  border-top-right-radius: 4px !important;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-bottom-left-radius: 4px !important;
+  border-bottom-right-radius: 4px !important;
+}
+
+/* Custom marker styles */
+.custom-leaflet-marker {
+  background: transparent;
+  border: none;
+}
+
+.custom-leaflet-marker .marker-icon {
+  width: 30px;
+  height: 30px;
+  background-color: #fb923c;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  border: 2px solid white;
+  font-size: 16px;
+}
+
+/* Custom popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px !important;
+  padding: 0 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-popup-content {
+  margin: 8px 10px !important;
+  font-family: 'Inter var', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* HERE maps UI control styling */
+.H_ui {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.H_ib_body {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.H_btn {
+  border-radius: 4px !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.H_btn:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.H_btn:active {
+  background-color: #f3f4f6 !important;
+}
+
+.H_ib_close {
+  font-size: 16px;
+  padding: 5px;
+}
+
+.H_ib_content {
+  padding: 8px 12px;
+}
+
+/* HERE Map popup and loading styles */
+.popup-content {
+  font-size: 12px;
+  color: #374151;
+  text-align: center;
+  max-width: 200px;
+  overflow-wrap: break-word;
+  padding: 5px;
+}
+
+.popup-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B7280;
+  font-size: 11px;
+}
+
+.spinner {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #fb923c;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  animation: spin 1s linear infinite;
+  margin-right: 5px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Map instructions styling */
+.map-instructions {
+  font-style: italic;
+  color: #4B5563;
+  margin-top: 0.25rem;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
