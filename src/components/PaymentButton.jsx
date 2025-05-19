@@ -38,54 +38,45 @@ const PaymentButton = ({ itemId, amount, currency, onSuccess }) => {
     };
   }, []);
 
+  // Separate PayPal loading function
+  const loadPayPalScript = () => {
+    console.log('Loading PayPal script with client ID:', import.meta.env.VITE_PAYPAL_CLIENT_ID);
+    
+    loadScript({
+      "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID,
+      currency: currency || "EUR",
+      components: "buttons,marks",
+      "enable-funding": "card",
+      "disable-funding": "paylater,venmo,sepa,bancontact", 
+      debug: false
+    })
+    .then(paypal => {
+      if (isMounted.current) {
+        console.log('PayPal script loaded successfully');
+        paypalInstance.current = paypal;
+        setIsScriptLoaded(true);
+      }
+    })
+    .catch(err => {
+      console.error("Failed to load PayPal SDK:", err);
+      if (isMounted.current) {
+        setError("Error loading PayPal");
+      }
+    });
+  };
+
   // Load PayPal script only once
   useEffect(() => {
-    // Skip if we're already processing a payment or script is loaded
     if (isScriptLoaded || isProcessingPayment || scriptPromise.current) {
       return;
     }
-
-    const loadPayPalScript = async () => {
-      try {
-        console.log('Loading PayPal script with client ID from ENV:', import.meta.env.VITE_PAYPAL_CLIENT_ID);
-        console.log('Payment details:', { itemId, amount, currency });
-        
-        // Store the promise in the ref to track loading state
-        scriptPromise.current = loadScript({
-          "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID,
-          currency: currency || "EUR",
-          components: "buttons,marks",
-          "enable-funding": "card",
-          "disable-funding": "paylater,venmo,sepa,bancontact", 
-          debug: false // Disable debug in production
-        });
-        
-        const paypal = await scriptPromise.current;
-        
-        // Only update state if component is still mounted
-        if (isMounted.current) {
-          console.log('PayPal script loaded successfully');
-          paypalInstance.current = paypal;
-          setIsScriptLoaded(true);
-        }
-      } catch (error) {
-        console.error("Failed to load PayPal SDK:", error);
-        if (isMounted.current) {
-          setError(`Impossible de charger PayPal: ${error.message}`);
-        }
-      }
-    };
     
+    scriptPromise.current = true; // Mark as loading
     loadPayPalScript();
     
     return () => {
-      // Handle cleanup of script loading process
-      if (scriptPromise.current) {
-        // Just log completion but don't affect state
-        scriptPromise.current
-          .then(() => console.log('PayPal script finished loading after cleanup'))
-          .catch(() => console.log('PayPal script loading failed after cleanup'));
-      }
+      // Just log cleanup
+      console.log('Cleaning up PayPal script loading effect');
     };
   }, [currency, isScriptLoaded, isProcessingPayment, itemId, amount]);
 
