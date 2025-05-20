@@ -1,11 +1,11 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_URL = 'http://localhost:5000/api/items';
-const NOTIFICATIONS_URL = 'http://localhost:5000/api/notifications';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+const NOTIFICATIONS_URL = `${API_URL}/notifications`;
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: API_URL,
   withCredentials: true  // Important for sending cookies with requests
 });
 

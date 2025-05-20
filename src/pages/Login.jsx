@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -126,29 +126,36 @@ const Login = () => {
     }
   }, [searchParams, navigate]);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
+    
     try {
-      setIsLoading(true);
-      setError('');
-      
-      // Add a query parameter to indicate this is a login attempt, not registration
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      // Use clean URL without any double slashes
+      const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+      // Ensure there's no trailing slash in the base URL
       const cleanBaseUrl = apiBaseUrl.endsWith('/') 
         ? apiBaseUrl.slice(0, -1) 
         : apiBaseUrl;
       
+      // Add action=register to indicate this is a registration attempt
       const googleAuthUrl = `${cleanBaseUrl}/auth/google?action=login`;
-      console.log('Redirecting to Google auth URL for login:', googleAuthUrl);
       
-      // Open in current window for better cookie handling
+      console.log('Redirecting to Google auth for login:', googleAuthUrl);
+      
+      // Open Google sign-in in the same window for better cookie handling
       window.location.href = googleAuthUrl;
     } catch (err) {
       console.error('Google login error:', err);
       setError('Échec de la connexion avec Google. Veuillez réessayer.');
+      toast.error('Échec de la connexion avec Google. Veuillez réessayer.', {
+        duration: 4000,
+        position: 'top-center'
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // If already redirecting, show a loading state
   if (redirecting) {

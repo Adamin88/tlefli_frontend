@@ -116,10 +116,8 @@ export default function Register() {
     setError('');
     
     try {
-      // Don't save to localStorage, pass directly in URL
-      
       // Use clean URL without any double slashes
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
       // Ensure there's no trailing slash in the base URL
       const cleanBaseUrl = apiBaseUrl.endsWith('/') 
         ? apiBaseUrl.slice(0, -1) 

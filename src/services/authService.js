@@ -1,7 +1,37 @@
 import axios from 'axios';
 
-// Double-check this URL matches your backend server address
-const API_URL = 'http://localhost:5000/api';
+// Improved API URL detection with hostname-based fallback for production
+const determineApiUrl = () => {
+  // First try environment variable
+  if (import.meta.env.VITE_API_URL) {
+    console.log('Using API URL from environment:', import.meta.env.VITE_API_URL);
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // If no environment variable, derive from current hostname
+  const hostname = window.location.hostname;
+  
+  // For localhost development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    console.log('Development environment detected, using localhost API');
+    return 'http://localhost:5000/api';
+  }
+  
+  // For production on tlefli.ma
+  if (hostname.includes('tlefli.ma')) {
+    const apiUrl = `https://api.${hostname}/api`;
+    console.log('Production environment detected, using API URL:', apiUrl);
+    return apiUrl;
+  }
+  
+  // Default fallback with warning
+  console.warn('Could not determine API URL from environment or hostname, using default');
+  return 'https://api.tlefli.ma/api';
+};
+
+// Get API URL using the improved detection function
+const API_URL = determineApiUrl();
+console.log('API URL configured as:', API_URL);
 
 // In-memory state only - no localStorage
 let currentUser = null;
@@ -140,14 +170,18 @@ const authService = {
     try {
       isValidatingSession = true;
       console.log('Initializing authentication state');
+      console.log('Using API URL:', API_URL);
       
       // Check basic API connectivity first
       try {
         console.log('Testing API connectivity');
-        await axios.get(`${API_URL.replace('/api', '')}/`);
+        const connectivityUrl = `${API_URL.replace('/api', '')}/`;
+        console.log('Connectivity test URL:', connectivityUrl);
+        await axios.get(connectivityUrl);
         console.log('API connectivity check passed');
       } catch (connectError) {
         console.error('API connectivity error:', connectError.message);
+        console.error('Failed connecting to:', connectError.config?.url);
       }
       
       // Try to get diagnostic info first
@@ -673,7 +707,8 @@ const authService = {
   // Verify Google token (after Google OAuth callback)
   verifyGoogleToken: async (token) => {
     try {
-      const response = await axios.post('/auth/google/verify', { token });
+      console.log('Verifying Google token with API URL:', API_URL);
+      const response = await axios.post(`${API_URL}/auth/google/verify`, { token });
       const { user, token: authToken } = response.data;
       
       if (user && authToken) {
@@ -686,6 +721,8 @@ const authService = {
         token: authToken
       };
     } catch (error) {
+      console.error('Google token verification failed:', error.message);
+      console.error('Request URL was:', `${API_URL}/auth/google/verify`);
       return {
         success: false,
         error: error.response?.data?.message || 'Google authentication failed'
