@@ -1,32 +1,16 @@
 import axios from 'axios';
 
-// Improved API URL detection with hostname-based fallback for production
+// Simplified API URL detection that only uses environment variables
 const determineApiUrl = () => {
-  // First try environment variable
+  // Use environment variable if available
   if (import.meta.env.VITE_API_URL) {
     console.log('Using API URL from environment:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
   
-  // If no environment variable, derive from current hostname
-  const hostname = window.location.hostname;
-  
-  // For localhost development
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    console.log('Development environment detected, using localhost API');
-    return 'http://localhost:5000/api';
-  }
-  
-  // For production on tlefli.ma
-  if (hostname.includes('tlefli.ma')) {
-    const apiUrl = `https://api.${hostname}/api`;
-    console.log('Production environment detected, using API URL:', apiUrl);
-    return apiUrl;
-  }
-  
-  // Default fallback with warning
-  console.warn('Could not determine API URL from environment or hostname, using default');
-  return 'https://api.tlefli.ma/api';
+  // Simple fallback with warning
+  console.warn('VITE_API_URL environment variable not found, using default /api path');
+  return '/api';
 };
 
 // Get API URL using the improved detection function
