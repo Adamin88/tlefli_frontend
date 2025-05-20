@@ -262,7 +262,7 @@ export const AuthProvider = ({ children }) => {
       console.log('AuthContext: Initiating Google authentication flow');
       
       // Redirect to Google auth endpoint
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       window.location.href = `${apiUrl}/auth/google?userType=${userType}`;
       
       return { success: true };
