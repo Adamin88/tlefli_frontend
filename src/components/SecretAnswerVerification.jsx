@@ -22,6 +22,7 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
     incorrect: false,
     correct: false
   });
+  const [error, setError] = useState(null);
 
   // Initialize with either a single answer or multiple answers
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
       }
 
       setIsVerifying(true);
+      setError(null);
 
       // Convert IDs to strings to ensure consistent formatting
       const itemId = String(item._id);
@@ -155,6 +157,7 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
         errorMessage = error.message;
       }
       
+      setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsVerifying(false);
