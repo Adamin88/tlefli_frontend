@@ -875,6 +875,39 @@ export default function ItemDetails() {
       );
     };
 
+    // Create safe versions of all imported components to prevent undefined errors
+    const SafeQRCodeGenerator = (props) => {
+      if (!QRCodeGenerator) {
+        console.warn("QRCodeGenerator is undefined");
+        return <div className="p-4 bg-gray-100 rounded">QR Code unavailable</div>;
+      }
+      return <QRCodeGenerator {...props} />;
+    };
+
+    const SafeSecretAnswerVerification = (props) => {
+      if (!SecretAnswerVerification) {
+        console.warn("SecretAnswerVerification is undefined");
+        return null;
+      }
+      return <SecretAnswerVerification {...props} />;
+    };
+
+    const SafeMatchesList = (props) => {
+      if (!MatchesList) {
+        console.warn("MatchesList is undefined");
+        return <div>Unable to load matches</div>;
+      }
+      return <MatchesList {...props} />;
+    };
+
+    const SafeItemVerificationScanner = (props) => {
+      if (!ItemVerificationScanner) {
+        console.warn("ItemVerificationScanner is undefined");
+        return <div>Scanner unavailable</div>;
+      }
+      return <ItemVerificationScanner {...props} />;
+    };
+
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Navigation and Actions Bar */}
