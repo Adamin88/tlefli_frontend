@@ -539,6 +539,20 @@ export default function ItemDetails() {
     });
   };
 
+  // Create a safety wrapper to protect against undefined components
+  const SafeComponent = ({ children, fallback = null }) => {
+    if (!children) {
+      console.warn("Attempted to render undefined component");
+      return fallback;
+    }
+    try {
+      return <>{children}</>;
+    } catch (error) {
+      console.error("Error rendering component:", error);
+      return fallback;
+    }
+  };
+
   // This verification section was defined but might not be used correctly
   const renderVerificationSection = () => {
     if (!id) return null;
@@ -770,7 +784,7 @@ export default function ItemDetails() {
       }, 300);
     };
 
-    // Define the QRCodeModal component here (after printQRCode is defined)
+    // Define the QRCodeModal using the safe components
     const QRCodeModal = ({ value, title, reference, onClose }) => {
       if (!value) return null;
       
@@ -784,7 +798,7 @@ export default function ItemDetails() {
               onClick={onClose}
               className="absolute top-3 right-3 text-gray-400 hover:text-gray-500"
             >
-              <XMarkIcon className="h-6 w-6" />
+              {XMarkIcon ? <XMarkIcon className="h-6 w-6" /> : <span>×</span>}
             </button>
             <div className="text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-2">{title || 'QR Code'}</h3>
@@ -808,7 +822,7 @@ export default function ItemDetails() {
                 onClick={printQRCode}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
-                <PrinterIcon className="h-4 w-4 mr-1.5" />
+                {PrinterIcon ? <PrinterIcon className="h-4 w-4 mr-1.5" /> : null}
                 Imprimer
               </button>
             </div>
@@ -1100,8 +1114,10 @@ export default function ItemDetails() {
           ) : null}
         </div>
 
-        {/* ROW 2: Secret Answer Verification - Add explicit null check */}
-        {typeof renderSecretAnswersSection === 'function' ? renderSecretAnswersSection() : null}
+        {/* ROW 2: Secret Answer Verification */}
+        <SafeComponent>
+          {typeof renderSecretAnswersSection === 'function' ? renderSecretAnswersSection() : null}
+        </SafeComponent>
         
         {/* ROW 3: Matches Section */}
         <div className="mb-6">
@@ -1109,14 +1125,14 @@ export default function ItemDetails() {
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  {ChartBarIcon && <ChartBarIcon className="h-5 w-5 text-yellow-600" />}
+                  {ChartBarIcon ? <ChartBarIcon className="h-5 w-5 text-yellow-600" /> : null}
                   <h2 className="font-medium text-gray-900">Objets potentiellement correspondants</h2>
                 </div>
               </div>
             </div>
             <div className="p-4">
-              {MatchesList && (
-                <MatchesList 
+              <SafeComponent fallback={<div>Chargement des correspondances...</div>}>
+                <SafeMatchesList 
                   itemId={id} 
                   isTwinned={!!item.twin}
                   twinnedItemId={item.twin?._id}
@@ -1124,7 +1140,7 @@ export default function ItemDetails() {
                   onStatusUpdate={handleStatusUpdate} 
                   onTwinItems={handleTwinItems} 
                 />
-              )}
+              </SafeComponent>
             </div>
           </div>
         </div>
@@ -1139,16 +1155,18 @@ export default function ItemDetails() {
                   onClick={() => setShowVerificationScanner(false)}
                   className="p-1 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100"
                 >
-                  <XMarkIcon className="h-5 w-5" />
+                  {XMarkIcon ? <XMarkIcon className="h-5 w-5" /> : <span>×</span>}
                 </button>
               </div>
               <div className="p-4">
-                <ItemVerificationScanner
-                  currentItemId={id}
-                  onVerificationSuccess={handleVerificationSuccess}
-                  onVerificationFailure={handleVerificationFailure}
-                  onClose={() => setShowVerificationScanner(false)}
-                />
+                <SafeComponent fallback={<div>Le scanner n'est pas disponible</div>}>
+                  <SafeItemVerificationScanner
+                    currentItemId={id}
+                    onVerificationSuccess={handleVerificationSuccess}
+                    onVerificationFailure={handleVerificationFailure}
+                    onClose={() => setShowVerificationScanner(false)}
+                  />
+                </SafeComponent>
               </div>
             </div>
           </div>
@@ -1156,29 +1174,35 @@ export default function ItemDetails() {
 
         {/* QR Code Modal */}
         {showFullQR && (
-          <QRCodeModal
-            value={`${baseUrl}/items/${item._id}`}
-            title={item.title}
-            reference={item.reference}
-            onClose={() => setShowFullQR(false)}
-          />
+          <SafeComponent>
+            <QRCodeModal
+              value={`${baseUrl}/items/${item._id}`}
+              title={item.title}
+              reference={item.reference}
+              onClose={() => setShowFullQR(false)}
+            />
+          </SafeComponent>
         )}
 
         {/* Image Modal */}
         {selectedImage && (
-          <ImageModal
-            image={selectedImage}
-            onClose={() => setSelectedImage(null)}
-          />
+          <SafeComponent>
+            <ImageModal
+              image={selectedImage}
+              onClose={() => setSelectedImage(null)}
+            />
+          </SafeComponent>
         )}
 
-        {/* Fix 4: Add the ScannerButton to the return statement */}
-        {typeof ScannerButton === 'function' ? <ScannerButton /> : null}
+        {/* Scanner Button */}
+        <SafeComponent>
+          {typeof ScannerButton === 'function' ? <ScannerButton /> : null}
+        </SafeComponent>
       </div>
     );
   } catch (renderError) {
     console.error("Error rendering ItemDetails:", renderError);
-    console.error("Error details:", renderError.stack); // Log the full stack trace
+    console.error("Error details:", renderError.stack);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-red-50 p-4 rounded-lg max-w-lg">
