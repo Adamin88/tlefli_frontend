@@ -253,6 +253,32 @@ const BaseMatchCard = ({
     return `il y a ${years} an${years > 1 ? 's' : ''}`;
   };
 
+  // Get category and subcategory icons with enhanced error handling
+  const getCategoryIcon = (category) => {
+    if (!category || !CATEGORIES_CONFIG[category] || !CATEGORIES_CONFIG[category].icon) {
+      return null;
+    }
+    const IconComponent = CATEGORIES_CONFIG[category].icon;
+    return IconComponent ? React.createElement(IconComponent, { className: "h-5 w-5 text-gray-500" }) : null;
+  };
+
+  const getSubcategoryIcon = (category, subcategory) => {
+    if (!category || !subcategory || 
+        !CATEGORIES_CONFIG[category] || 
+        !CATEGORIES_CONFIG[category].subcategories || 
+        !CATEGORIES_CONFIG[category].subcategories[subcategory] ||
+        !CATEGORIES_CONFIG[category].subcategories[subcategory].icon) {
+      return null;
+    }
+    
+    const iconName = CATEGORIES_CONFIG[category].subcategories[subcategory].icon.name;
+    if (!iconName || !CategoryIcons[iconName]) {
+      return null;
+    }
+    
+    return React.createElement(CategoryIcons[iconName], { className: "h-5 w-5 text-gray-500 mr-1.5" });
+  };
+
   // Enhanced error handling for invalid match data
   if (!match || !match.item) {
     return (
@@ -289,9 +315,6 @@ const BaseMatchCard = ({
   const categoryKey = match.item.category && CATEGORIES_CONFIG[match.item.category] ? match.item.category : null;
   const subcategoryKey = categoryKey && match.item.subcategory && CATEGORIES_CONFIG[categoryKey]?.subcategories[match.item.subcategory] ? match.item.subcategory : null;
 
-  // Get subcategory icon safely
-  const subcategoryIcon = categoryKey && subcategoryKey && CATEGORIES_CONFIG[categoryKey]?.subcategories[subcategoryKey]?.icon;
-
   return (
     <div 
       className={`bg-white rounded-xl shadow-lg hover:shadow-xl border border-gray-100 
@@ -303,15 +326,11 @@ const BaseMatchCard = ({
       <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            {/* Show subcategory icon before title instead of category icon */}
-            {subcategoryIcon && (
-              <div className="text-gray-500 flex-shrink-0">
-                {React.createElement(
-                  CategoryIcons[subcategoryIcon.name] || (() => null), 
-                  { className: "h-5 w-5" }
-                )}
-              </div>
-            )}
+            {/* Show subcategory icon or fall back to category icon before title */}
+            {(categoryKey && subcategoryKey) ? (
+              getSubcategoryIcon(categoryKey, subcategoryKey) || getCategoryIcon(categoryKey)
+            ) : null}
+            
             <h3 className="text-lg font-medium text-gray-900 truncate max-w-[200px]">
               {match.item.title || 'Sans titre'}
             </h3>
@@ -418,10 +437,11 @@ const BaseMatchCard = ({
               )
             )}
             
-            {/* Category information without icon */}
+            {/* Category information with icon */}
             <div className="flex items-start">
-              <TagIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5 mr-2" />
-              <div className="flex-1">
+              {/* Use category icon */}
+              {getCategoryIcon(match.item.category) || <TagIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5 mr-2" />}
+              <div className="flex-1 ml-2">
                 <p className="text-sm font-medium text-gray-700">Catégorie</p>
                 <p className="text-sm text-gray-600">
                   {categoryKey && subcategoryKey ? 
@@ -508,7 +528,11 @@ const BaseMatchCard = ({
             {/* Subcategory Fields */}
             {match.item.subcategoryFields && Object.keys(match.item.subcategoryFields).length > 0 && (
               <div className="col-span-2 mt-2">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Détails spécifiques</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  {/* Show subcategory icon in the details section header */}
+                  {getSubcategoryIcon(match.item.category, match.item.subcategory)}
+                  <span>Détails spécifiques</span>
+                </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
                   {Object.entries(match.item.subcategoryFields).map(([key, value]) => (
                     <div key={key} className="flex flex-col">
