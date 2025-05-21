@@ -306,7 +306,7 @@ const MatchesList = ({
     
     // Update both items in the match pair when verification is complete
     if (isCorrect) {
-      // Find both twinned items and update their status
+      // Find both twinned items and update their status to 'authenticated'
       setMatches(prevMatches => {
         const updatedMatches = prevMatches.map(match => {
           // For any twinned item, update its status to 'authenticated'
@@ -375,76 +375,83 @@ const MatchesList = ({
     }
   };
 
+  // Add safe rendering for no matches
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 p-4 rounded-lg">
+        <p className="text-red-700">{error}</p>
+      </div>
+    );
+  }
+
+  if (!matches || matches.length === 0) {
+    return (
+      <div className="text-center py-6 bg-gray-50 rounded-lg">
+        <p className="text-gray-500">Aucun objet correspondant trouvé</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {loading ? (
-        <div className="text-center py-4">
-          <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400 animate-pulse" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Chargement des correspondances...</h3>
-        </div>
-      ) : error ? (
-        <div className="text-center py-4">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      ) : matches.length === 0 ? (
-        <div className="text-center py-4">
-          <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune correspondance trouvée</h3>
-        </div>
-      ) : (
-        <>
-          {matches.map((match) => {
-            // Prepare match data with default twin object if needed
-            const enhancedMatch = {
-              ...match,
-              item: {
-                ...match.item,
-                twin: match.item.twin || {
-                  isTwinned: false,
-                  item: null,
-                  initiatedBy: null
-                }
-              }
-            };
-            
-            // Render the appropriate card based on the item type
-            return match.item.type === 'found' ? (
-              <FoundItemMatchCard
-                key={match.item._id}
-                match={enhancedMatch}
-                onMatchedItemStatusUpdate={onMatchedItemStatusUpdate}
-                currentUser={currentUser}
-                onTwinItems={handleTwinItems}
-                onNotificationRefresh={refreshNotifications}
-                sourceItemId={itemId}
-                isSourceItem={match.item._id === itemId}
-                onVerificationComplete={handleVerificationComplete}
-              />
-            ) : (
-              <LostItemMatchCard
-                key={match.item._id}
-                match={enhancedMatch}
-                onMatchedItemStatusUpdate={onMatchedItemStatusUpdate}
-                currentUser={currentUser}
-                onTwinItems={handleTwinItems}
-                onNotificationRefresh={refreshNotifications}
-                sourceItemId={itemId}
-                isSourceItem={match.item._id === itemId}
-                onVerificationComplete={handleVerificationComplete}
-              />
-            );
-          })}
-          
-          {/* Only show expand button if there are more than 3 non-twinned matches */}
-          {matches.length > 3 && !matches.some(match => match.item.twin?.isTwinned || match.sourceItem?.twin?.isTwinned) && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              {expanded ? 'Voir moins' : `Voir ${matches.length - 3} correspondances de plus`}
-            </button>
-          )}
-        </>
+      {matches.map((match) => {
+        // Prepare match data with default twin object if needed
+        const enhancedMatch = {
+          ...match,
+          item: {
+            ...match.item,
+            twin: match.item.twin || {
+              isTwinned: false,
+              item: null,
+              initiatedBy: null
+            }
+          }
+        };
+        
+        // Render the appropriate card based on the item type
+        return match.item.type === 'found' ? (
+          <FoundItemMatchCard
+            key={match.item._id}
+            match={enhancedMatch}
+            onMatchedItemStatusUpdate={onMatchedItemStatusUpdate}
+            currentUser={currentUser}
+            onTwinItems={handleTwinItems}
+            onNotificationRefresh={refreshNotifications}
+            sourceItemId={itemId}
+            isSourceItem={match.item._id === itemId}
+            onVerificationComplete={handleVerificationComplete}
+          />
+        ) : (
+          <LostItemMatchCard
+            key={match.item._id}
+            match={enhancedMatch}
+            onMatchedItemStatusUpdate={onMatchedItemStatusUpdate}
+            currentUser={currentUser}
+            onTwinItems={handleTwinItems}
+            onNotificationRefresh={refreshNotifications}
+            sourceItemId={itemId}
+            isSourceItem={match.item._id === itemId}
+            onVerificationComplete={handleVerificationComplete}
+          />
+        );
+      })}
+      
+      {/* Only show expand button if there are more than 3 non-twinned matches */}
+      {matches.length > 3 && !matches.some(match => match.item.twin?.isTwinned || match.sourceItem?.twin?.isTwinned) && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          {expanded ? 'Voir moins' : `Voir ${matches.length - 3} correspondances de plus`}
+        </button>
       )}
     </div>
   );

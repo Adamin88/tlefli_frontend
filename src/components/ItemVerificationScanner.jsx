@@ -454,6 +454,7 @@ const ItemVerificationScanner = ({
     }
   };
 
+  // Ensure we always return something
   return (
     <div className="bg-white rounded-lg shadow-lg p-4 max-w-md mx-auto">
       {/* Header with visible debug info */}

@@ -187,6 +187,19 @@ const QRCodeGenerator = ({
     }
   };
 
+  // Ensure we have a value to render
+  if (!value) {
+    console.warn("QRCodeGenerator: No value provided");
+    return (
+      <div 
+        style={{width: size, height: size}} 
+        className="flex items-center justify-center bg-gray-100 rounded"
+      >
+        <span className="text-xs text-gray-500">QR indisponible</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center">
       <div ref={qrCodeRef} className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
