@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { XMarkIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import BaseMatchCard from './BaseMatchCard';
 import itemsService from '../services/itemsService';
+import { CATEGORIES_CONFIG } from '../config/categoriesConfig';
+// Import all category icons
+import * as CategoryIcons from '../config/categoriesConfig';
 
 const LostItemMatchCard = ({ 
   match, 
@@ -318,6 +321,60 @@ const LostItemMatchCard = ({
     );
   };
 
+  // Function to get subcategory icon
+  const getSubcategoryIcon = (category, subcategory) => {
+    if (!category || !subcategory || !CATEGORIES_CONFIG[category]?.subcategories[subcategory]) {
+      return null;
+    }
+    
+    const iconName = CATEGORIES_CONFIG[category].subcategories[subcategory].icon?.name;
+    if (!iconName || !CategoryIcons[iconName]) return null;
+    
+    return React.createElement(CategoryIcons[iconName], { className: "h-5 w-5 text-gray-600 mr-2" });
+  };
+
+  // Add renderHeader function to customize the header with subcategory icon
+  const renderHeader = () => {
+    const { category, subcategory } = match.item;
+    
+    return (
+      <>
+        {/* Location for lost items */}
+        <div className="flex items-start">
+          <MapPinIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5 mr-2" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-700">Emplacement</p>
+            <p className="text-sm text-gray-600">
+              {match.item.location?.address || match.item.location?.name || 'Emplacement non spécifié'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Category with subcategory icon */}
+        <div className="flex items-start mt-3">
+          {getSubcategoryIcon(category, subcategory)}
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-700">Catégorie</p>
+            <p className="text-sm text-gray-600">
+              {CATEGORIES_CONFIG[category]?.label || 'Catégorie'} - {CATEGORIES_CONFIG[category]?.subcategories[subcategory]?.label || 'Sous-catégorie'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Date when the item was lost */}
+        <div className="flex items-start mt-3">
+          <CalendarIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5 mr-2" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-700">Date de perte</p>
+            <p className="text-sm text-gray-600">
+              {new Date(match.item.date).toLocaleDateString('fr-FR')}
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   return (
     <BaseMatchCard
       match={match}
@@ -327,6 +384,7 @@ const LostItemMatchCard = ({
       forceRender={forceRender}
       renderActionButtons={renderActionButtons}
       renderDetailsContent={renderDetailsContent}
+      renderHeader={renderHeader} // Add this line to use custom header
       onVerificationComplete={handleVerificationComplete}
       renderHeaderExtras={renderHeaderExtras}
     >
