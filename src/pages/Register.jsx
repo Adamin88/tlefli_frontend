@@ -145,11 +145,48 @@ export default function Register() {
     }
   }, [selected.id, adBlockerDetected]);
 
-  // Helper function to handle step progression
+  // Enhanced animation variants for step transitions - modified to not interfere with logo
+  const stepTransition = {
+    hidden: { opacity: 0, x: 50, position: 'absolute' },
+    visible: { 
+      opacity: 1, 
+      x: 0, 
+      position: 'relative',
+      transition: { 
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+        duration: 0.4
+      } 
+    },
+    exit: { 
+      opacity: 0, 
+      x: -50, 
+      position: 'absolute',
+      transition: { 
+        ease: 'easeInOut',
+        duration: 0.3
+      } 
+    }
+  };
+
+  // Helper function to handle step progression with enhanced animation
   const goToNextStep = () => {
     // Only proceed if a user type is selected
     if (selected) {
-      setCurrentStep(2);
+      // Create visual indication that we're progressing
+      const progressIndicator = document.getElementById('step-progress');
+      if (progressIndicator) {
+        progressIndicator.classList.add('animate-pulse');
+        setTimeout(() => {
+          setCurrentStep(2);
+          setTimeout(() => {
+            progressIndicator.classList.remove('animate-pulse');
+          }, 500);
+        }, 300);
+      } else {
+        setCurrentStep(2);
+      }
     } else {
       toast.error("Veuillez sélectionner un type de compte pour continuer");
     }
@@ -202,14 +239,14 @@ export default function Register() {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100 flex items-center justify-center p-4 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-5xl w-full h-[calc(100vh-2rem)] max-h-[900px] bg-white shadow-2xl rounded-3xl flex flex-col md:flex-row overflow-hidden relative"
+        className="max-w-5xl w-full h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] max-h-[900px] bg-white shadow-2xl rounded-2xl sm:rounded-3xl flex flex-col md:flex-row overflow-hidden relative"
       >
-        {/* Enhanced decorative elements */}
+        {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-yellow-300 z-10"></div>
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 to-yellow-400 z-10"></div>
         <div className="absolute -top-20 -left-20 w-40 h-40 bg-yellow-200 rounded-full opacity-20 blur-xl"></div>
@@ -217,25 +254,26 @@ export default function Register() {
         <div className="absolute top-1/4 right-10 w-20 h-20 bg-blue-100 rounded-full opacity-10 blur-xl"></div>
         <div className="absolute bottom-1/3 left-10 w-16 h-16 bg-red-100 rounded-full opacity-10 blur-xl"></div>
         
-        {/* Home Button with better positioning and feedback */}
+        {/* Home Button */}
         <Link
           to="/"
-          className="absolute top-4 left-4 z-20 bg-white hover:bg-yellow-50 p-2 rounded-full 
-                   transition-all duration-300 ease-in-out flex items-center justify-center 
-                   shadow-md hover:shadow-lg text-yellow-600 border border-transparent hover:border-yellow-200"
+          className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 bg-white hover:bg-yellow-50 p-1.5 sm:p-2 rounded-full 
+                  transition-all duration-300 ease-in-out flex items-center justify-center 
+                  shadow-md hover:shadow-lg text-yellow-600 border border-transparent hover:border-yellow-200"
         >
           <HomeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           <span className="sr-only">Accueil</span>
         </Link>
 
-        {/* New Enhanced Progress Steps Indicator (visible on both mobile and desktop) */}
-        <div className="absolute top-6 left-0 right-0 z-20 mx-auto flex justify-center pointer-events-none">
+        {/* Progress Steps Indicator - Made smaller on mobile */}
+        <div className="absolute top-3 sm:top-6 left-0 right-0 z-20 mx-auto flex justify-center pointer-events-none">
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-3 border border-yellow-100 pointer-events-auto"
-            style={{ width: 'min(90%, 320px)' }}
+            className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg p-2 sm:p-3 border border-yellow-100 pointer-events-auto"
+            style={{ width: 'min(90%, 280px)' }}
+            id="step-progress"
           >
             <div className="flex justify-between items-center relative">
               {/* Progress Line */}
@@ -244,7 +282,7 @@ export default function Register() {
                 initial={{ width: "0%" }}
                 animate={{ width: currentStep >= 2 ? "100%" : "0%" }}
                 transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="absolute h-1 inset-x-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-yellow-500 to-yellow-300 rounded-full z-0"
+                className="absolute h-0.5 sm:h-1 inset-x-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-yellow-500 to-yellow-300 rounded-full z-0"
               ></motion.div>
               
               {/* Step 1 */}
@@ -254,18 +292,18 @@ export default function Register() {
                   initial="inactive"
                   animate={currentStep >= 1 ? "completed" : "inactive"}
                   whileHover={{ scale: 1.05 }}
-                  className={`flex items-center justify-center h-10 w-10 rounded-full 
+                  className={`flex items-center justify-center h-7 w-7 sm:h-10 sm:w-10 rounded-full 
                     ${currentStep >= 1 
                       ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 shadow-md shadow-yellow-300/40' 
                       : 'bg-white border-2 border-gray-200'}`}
                 >
                   {currentStep > 1 ? (
-                    <CheckCircleIcon className="h-6 w-6 text-white" />
+                    <CheckCircleIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                   ) : (
-                    <span className={`font-bold ${currentStep >= 1 ? 'text-white' : 'text-gray-500'}`}>1</span>
+                    <span className={`text-sm sm:text-base font-bold ${currentStep >= 1 ? 'text-white' : 'text-gray-500'}`}>1</span>
                   )}
                 </motion.div>
-                <p className={`mt-1.5 text-xs font-medium leading-none text-center ${currentStep >= 1 ? 'text-gray-700' : 'text-gray-500'}`}>
+                <p className={`mt-1 text-[10px] sm:text-xs font-medium leading-none text-center ${currentStep >= 1 ? 'text-gray-700' : 'text-gray-500'}`}>
                   Type de<br/>compte
                 </p>
               </div>
@@ -277,14 +315,14 @@ export default function Register() {
                   initial="inactive"
                   animate={currentStep >= 2 ? "active" : "inactive"}
                   whileHover={{ scale: 1.05 }}
-                  className={`flex items-center justify-center h-10 w-10 rounded-full 
+                  className={`flex items-center justify-center h-7 w-7 sm:h-10 sm:w-10 rounded-full 
                     ${currentStep >= 2 
                       ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 shadow-md shadow-yellow-300/40' 
                       : 'bg-white border-2 border-gray-200'}`}
                 >
-                  <span className={`font-bold ${currentStep >= 2 ? 'text-white' : 'text-gray-500'}`}>2</span>
+                  <span className={`text-sm sm:text-base font-bold ${currentStep >= 2 ? 'text-white' : 'text-gray-500'}`}>2</span>
                 </motion.div>
-                <p className={`mt-1.5 text-xs font-medium leading-none text-center ${currentStep >= 2 ? 'text-gray-700' : 'text-gray-500'}`}>
+                <p className={`mt-1 text-[10px] sm:text-xs font-medium leading-none text-center ${currentStep >= 2 ? 'text-gray-700' : 'text-gray-500'}`}>
                   Connexion
                 </p>
               </div>
@@ -292,10 +330,10 @@ export default function Register() {
           </motion.div>
         </div>
 
-        {/* Left Column: Redesigned with better flow */}
+        {/* Left Column: For tablet and desktop only */}
         <div className="hidden md:flex flex-col w-1/2 bg-gradient-to-b from-yellow-50 to-white justify-start items-center overflow-hidden">
           {/* Logo and header area with fixed height */}
-          <div className="w-full pt-28 pb-6 px-5 flex flex-col items-center">
+          <div className="w-full pt-20 sm:pt-28 pb-4 sm:pb-6 px-3 sm:px-5 flex flex-col items-center">
             <motion.div 
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -306,7 +344,7 @@ export default function Register() {
               <img
                 src="./TlefliLogo.webp"
                 alt="TLEFLI Logo"
-                className="h-16 relative z-10 w-auto max-w-full rounded-full shadow-md border-2 border-white"
+                className="h-12 sm:h-16 relative z-10 w-auto max-w-full rounded-full shadow-md border-2 border-white"
               />
             </motion.div>
             
@@ -314,7 +352,7 @@ export default function Register() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.4 }}
-              className="mt-4 text-center text-lg md:text-xl font-bold text-gray-800"
+              className="mt-4 text-center text-base sm:text-lg md:text-xl font-bold text-gray-800"
             >
               <span className="bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
                 Créez votre compte
@@ -323,143 +361,147 @@ export default function Register() {
           </div>
 
           {/* Dynamic content area based on step */}
-          <div className="flex-1 w-full overflow-hidden flex flex-col justify-between">
-            <div className="flex-1 overflow-y-auto px-6 pb-4">
-              {currentStep === 1 ? (
-                <motion.div 
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible" 
-                  className="w-full space-y-4"
+          <div className="flex-1 w-full overflow-hidden flex flex-col justify-between relative">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 relative">
+              {/* Step 1 Content */}
+              <motion.div 
+                key="step1"
+                variants={stepTransition}
+                initial={currentStep === 1 ? "visible" : "hidden"}
+                animate={currentStep === 1 ? "visible" : "exit"}
+                className="w-full space-y-4 absolute top-0 left-0 right-0"
+                style={{ display: currentStep === 1 ? 'block' : 'none' }}
+              >
+                <motion.p
+                  variants={itemVariants}
+                  className="text-center text-gray-600 text-xs sm:text-sm mb-4 sm:mb-6"
                 >
-                  <motion.p
-                    variants={itemVariants}
-                    className="text-center text-gray-600 text-sm mb-6"
-                  >
-                    Veuillez sélectionner le type de compte qui correspond le mieux à vos besoins
-                  </motion.p>
-                  
-                  <div className="space-y-3.5 transform scale-[0.98]">
-                    {userTypes.map((type) => (
-                      <motion.button
-                        key={type.id}
-                        variants={itemVariants}
-                        whileHover={{
-                          scale: 1.02,
-                          boxShadow: "0 10px 15px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                        }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelected(type)}
-                        className={`
-                          w-full flex items-center p-4 rounded-xl transition-all duration-300
-                          ${selected.id === type.id
-                            ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white shadow-lg'
-                            : 'bg-white text-gray-700 border border-gray-100 hover:border-yellow-200'}
-                          group
-                        `}
-                      >
-                        <div className={`p-2.5 rounded-xl mr-3 ${
-                          selected.id === type.id 
-                            ? 'bg-white/20' 
-                            : 'bg-yellow-50 group-hover:bg-yellow-100'
-                        }`}>
-                          <type.icon className={`h-6 w-6 ${
-                            selected.id === type.id ? 'text-white' : 'text-yellow-500'
-                          }`} />
-                        </div>
-                        <div className="text-left flex-1">
-                          <h3 className="font-bold text-base">{type.title}</h3>
-                          <p className={`text-xs ${selected.id === type.id ? 'text-white/90' : 'text-gray-500'}`}>
-                            {type.description}
-                          </p>
-                        </div>
-                        <div className="ml-2">
-                          {selected.id === type.id ? (
-                            <motion.div 
-                              initial={{ scale: 0.5, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ type: "spring", stiffness: 500 }}
-                            >
-                              <CheckCircleIcon className="h-5 w-5 text-white" />
-                            </motion.div>
-                          ) : (
-                            <div className="h-5 w-5 rounded-full border-2 border-gray-200 group-hover:border-yellow-300"></div>
-                          )}
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                  
-                  <motion.div 
-                    variants={itemVariants}
-                    className="flex justify-center mt-8"
-                  >
+                  Veuillez sélectionner le type de compte qui correspond le mieux à vos besoins
+                </motion.p>
+                
+                <div className="space-y-3 sm:space-y-3.5 transform scale-[0.98]">
+                  {userTypes.map((type) => (
                     <motion.button
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={goToNextStep}
-                      className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500
-                               text-white px-6 py-2.5 rounded-full 
-                               flex items-center shadow-lg hover:shadow-xl transition-all duration-300
-                               focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                      key={type.id}
+                      variants={itemVariants}
+                      whileHover={{
+                        scale: 1.02,
+                        boxShadow: "0 10px 15px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -5px rgba(0, 0, 0, 0.04)",
+                      }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSelected(type)}
+                      className={`
+                        w-full flex items-center p-3 sm:p-4 rounded-xl transition-all duration-300
+                        ${selected.id === type.id
+                          ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white shadow-lg'
+                          : 'bg-white text-gray-700 border border-gray-100 hover:border-yellow-200'}
+                        group
+                      `}
                     >
-                      <span className="font-medium text-sm">Continuer</span>
-                      <ArrowRightIcon className="h-4 w-4 ml-2" />
+                      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl mr-2 sm:mr-3 ${
+                        selected.id === type.id 
+                          ? 'bg-white/20' 
+                          : 'bg-yellow-50 group-hover:bg-yellow-100'
+                      }`}>
+                        <type.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${
+                          selected.id === type.id ? 'text-white' : 'text-yellow-500'
+                        }`} />
+                      </div>
+                      <div className="text-left flex-1">
+                        <h3 className="font-bold text-sm sm:text-base">{type.title}</h3>
+                        <p className={`text-[10px] sm:text-xs ${selected.id === type.id ? 'text-white/90' : 'text-gray-500'}`}>
+                          {type.description}
+                        </p>
+                      </div>
+                      <div className="ml-2">
+                        {selected.id === type.id ? (
+                          <motion.div 
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 500 }}
+                          >
+                            <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                          </motion.div>
+                        ) : (
+                          <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full border-2 border-gray-200 group-hover:border-yellow-300"></div>
+                        )}
+                      </div>
                     </motion.button>
-                  </motion.div>
-                </motion.div>
-              ) : (
+                  ))}
+                </div>
+                
                 <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-full space-y-5 transform scale-[0.98]"
+                  variants={itemVariants}
+                  className="flex justify-center mt-6 sm:mt-8"
                 >
-                  <p className="text-center text-gray-600 text-sm">
-                    Vous êtes sur le point de créer un compte :
-                  </p>
-                  
-                  <motion.div 
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-white p-4 rounded-xl shadow-md border-l-4 border-yellow-500"
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={goToNextStep}
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500
+                            text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full 
+                            flex items-center shadow-lg hover:shadow-xl transition-all duration-300
+                            focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
                   >
-                    <div className="flex items-center">
-                      <div className="p-2.5 bg-yellow-50 rounded-xl mr-4">
-                        <selected.icon className="h-8 w-8 text-yellow-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-bold text-gray-800">{selected.title}</h3>
-                        <p className="text-xs text-gray-600">{selected.description}</p>
-                      </div>
+                    <span className="font-medium text-xs sm:text-sm">Continuer</span>
+                    <ArrowRightIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1.5 sm:ml-2" />
+                  </motion.button>
+                </motion.div>
+              </motion.div>
+              
+              {/* Step 2 Content */}
+              <motion.div 
+                key="step2"
+                variants={stepTransition}
+                initial={currentStep === 2 ? "visible" : "hidden"}
+                animate={currentStep === 2 ? "visible" : "hidden"}
+                className="w-full space-y-4 sm:space-y-5 transform scale-[0.98] absolute top-0 left-0 right-0"
+                style={{ display: currentStep === 2 ? 'block' : 'none' }}
+              >
+                <p className="text-center text-gray-600 text-xs sm:text-sm">
+                  Vous êtes sur le point de créer un compte :
+                </p>
+                
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-white p-3 sm:p-4 rounded-xl shadow-md border-l-4 border-yellow-500"
+                >
+                  <div className="flex items-center">
+                    <div className="p-2 sm:p-2.5 bg-yellow-50 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
+                      <selected.icon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
                     </div>
-                  </motion.div>
-                  
-                  <div className="text-center flex justify-center mt-4">
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setCurrentStep(1)}
-                      className="bg-white hover:bg-gray-50 text-yellow-600 hover:text-yellow-700 px-4 py-1.5 rounded-full text-sm
-                              border border-gray-200 hover:border-yellow-200 inline-flex items-center
-                              shadow-sm hover:shadow transition-all duration-300"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      Modifier mon choix
-                    </motion.button>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-gray-800">{selected.title}</h3>
+                      <p className="text-[10px] sm:text-xs text-gray-600">{selected.description}</p>
+                    </div>
                   </div>
                 </motion.div>
-              )}
+                
+                <div className="text-center flex justify-center mt-3 sm:mt-4">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setCurrentStep(1)}
+                    className="bg-white hover:bg-gray-50 text-yellow-600 hover:text-yellow-700 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm
+                            border border-gray-200 hover:border-yellow-200 inline-flex items-center
+                            shadow-sm hover:shadow transition-all duration-300"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Modifier mon choix
+                  </motion.button>
+                </div>
+              </motion.div>
             </div>
             
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="text-center py-3 w-full bg-gray-50 bg-opacity-50 border-t border-gray-100"
+              className="text-center py-2 sm:py-3 w-full bg-gray-50 bg-opacity-50 border-t border-gray-100"
             >
-              <p className="text-xs text-gray-600">
+              <p className="text-[10px] sm:text-xs text-gray-600">
                 Vous avez déjà un compte ?{' '}
                 <Link
                   to="/login"
@@ -472,21 +514,21 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Right Column: Redesigned with better content flow - centered content */}
+        {/* Right Column: Fixed to ensure logo visibility during transitions */}
         <div className="w-full md:w-1/2 flex flex-col justify-between h-full overflow-hidden bg-gradient-to-b from-white to-gray-50">
-          {/* Mobile content for first view - better positioning for mobile */}
-          <div className="md:hidden pt-28 px-4 flex flex-col items-center">
+          {/* Mobile content for first view - Moved to higher z-index to stay above transitions */}
+          <div className="md:hidden pt-16 sm:pt-20 px-4 flex flex-col items-center relative z-30">
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="relative mb-4"
+              className="relative mb-2 sm:mb-4"
             >
               <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 opacity-30 blur-md"></div>
               <img
                 src="./TlefliLogo.webp"
                 alt="TLEFLI Logo"
-                className="h-14 w-auto max-w-full rounded-full shadow-md border-2 border-white relative z-10"
+                className="h-10 sm:h-14 w-auto max-w-full rounded-full shadow-md border-2 border-white relative z-10"
               />
             </motion.div>
             
@@ -494,7 +536,7 @@ export default function Register() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.4 }}
-              className="text-center text-lg font-bold text-gray-800 mb-1"
+              className="text-center text-base sm:text-lg font-bold text-gray-800 mb-1"
             >
               <span className="bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
                 Créez votre compte
@@ -502,145 +544,148 @@ export default function Register() {
             </motion.h2>
           </div>
           
-          {/* Main content area - centered with flex */}
-          <div className="flex-1 overflow-hidden flex flex-col justify-center items-center mt-4 md:mt-0">
-            <div className="w-full max-w-md px-4 md:px-8">
-              {/* Mobile steps display */}
-              <div className="md:hidden flex-shrink-0">
-                {currentStep === 1 ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="overflow-hidden"
-                  >
-                    <p className="text-center text-gray-600 text-xs mb-4">
-                      Veuillez sélectionner le type de compte qui correspond le mieux à vos besoins
-                    </p>
-                    <div className="space-y-2.5 transform scale-[0.98]">
-                      {userTypes.map((type) => (
-                        <motion.button
-                          key={type.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setSelected(type)}
-                          className={`
-                            w-full flex items-center p-3 rounded-xl transition-all duration-300
-                            ${selected.id === type.id
-                              ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white shadow-md'
-                              : 'bg-white text-gray-700 border border-gray-100 hover:border-yellow-200'}
-                            group
-                          `}
-                        >
-                          <div className={`p-2 rounded-lg mr-3 ${
-                            selected.id === type.id 
-                              ? 'bg-white/20' 
-                              : 'bg-yellow-50 group-hover:bg-yellow-100'
-                          }`}>
-                            <type.icon className={`h-5 w-5 ${
-                              selected.id === type.id ? 'text-white' : 'text-yellow-500'
-                            }`} />
-                          </div>
-                          <div className="text-left flex-1">
-                            <h3 className="font-semibold text-sm">{type.title}</h3>
-                            <p className={`text-xs ${selected.id === type.id ? 'text-white/90' : 'text-gray-500'}`}>
-                              {type.description}
-                            </p>
-                          </div>
-                          <div className="ml-2">
-                            {selected.id === type.id ? (
-                              <motion.div
-                                initial={{ scale: 0.5, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 500 }}
-                              >
-                                <CheckCircleIcon className="h-4 w-4 text-white" />
-                              </motion.div>
-                            ) : (
-                              <div className="h-4 w-4 rounded-full border-2 border-gray-200 group-hover:border-yellow-300"></div>
-                            )}
-                          </div>
-                        </motion.button>
-                      ))}
-                    </div>
-                    <div className="flex justify-center mt-5">
+          {/* Main content area - Added padding-top to prevent overlap with logo */}
+          <div className="flex-1 overflow-auto flex flex-col justify-center items-center mt-1 sm:mt-4 md:mt-0 pt-4 md:pt-0">
+            <div className="w-full max-w-md px-3 sm:px-4 md:px-8 relative">
+              {/* Mobile steps display - Added lower z-index so it doesn't cover logo */}
+              <div className="md:hidden flex-shrink-0 relative z-20">
+                {/* Mobile Step 1 Content */}
+                <motion.div
+                  key="mobile-step1"
+                  variants={stepTransition}
+                  initial={currentStep === 1 ? "visible" : "hidden"}
+                  animate={currentStep === 1 ? "visible" : "exit"}
+                  className="overflow-hidden w-full"
+                  style={{ display: currentStep === 1 ? 'block' : 'none' }}
+                >
+                  <p className="text-center text-gray-600 text-[10px] sm:text-xs mb-3 sm:mb-4">
+                    Veuillez sélectionner le type de compte qui correspond le mieux à vos besoins
+                  </p>
+                  <div className="space-y-2 sm:space-y-2.5 transform scale-[0.98]">
+                    {userTypes.map((type) => (
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={goToNextStep}
-                        className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500
-                                text-white px-5 py-2 
-                                rounded-full flex items-center shadow-md hover:shadow-lg transition-all duration-300
-                                focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+                        key={type.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelected(type)}
+                        className={`
+                          w-full flex items-center p-2.5 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-300
+                          ${selected.id === type.id
+                            ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white shadow-md'
+                            : 'bg-white text-gray-700 border border-gray-100 hover:border-yellow-200'}
+                          group
+                        `}
                       >
-                        <span className="font-medium text-sm">Continuer</span>
-                        <ArrowRightIcon className="h-4 w-4 ml-1" />
+                        <div className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg mr-2 sm:mr-3 ${
+                          selected.id === type.id 
+                            ? 'bg-white/20' 
+                            : 'bg-yellow-50 group-hover:bg-yellow-100'
+                        }`}>
+                          <type.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                            selected.id === type.id ? 'text-white' : 'text-yellow-500'
+                          }`} />
+                        </div>
+                        <div className="text-left flex-1">
+                          <h3 className="font-semibold text-xs sm:text-sm">{type.title}</h3>
+                          <p className={`text-[9px] sm:text-xs ${selected.id === type.id ? 'text-white/90' : 'text-gray-500'}`}>
+                            {type.description}
+                          </p>
+                        </div>
+                        <div className="ml-2">
+                          {selected.id === type.id ? (
+                            <motion.div
+                              initial={{ scale: 0.5, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: "spring", stiffness: 500 }}
+                            >
+                              <CheckCircleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                            </motion.div>
+                          ) : (
+                            <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full border-2 border-gray-200 group-hover:border-yellow-300"></div>
+                          )}
+                        </div>
                       </motion.button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-4 transform scale-[0.98]"
-                  >
-                    <p className="text-center text-gray-600 text-xs mb-3">
-                      Vous êtes sur le point de créer un compte :
-                    </p>
-                    <motion.div 
-                      whileHover={{ scale: 1.02 }}
-                      className="bg-white p-3 rounded-xl shadow-sm border-l-4 border-yellow-500 mb-4"
+                    ))}
+                  </div>
+                  <div className="flex justify-center mt-4 sm:mt-5">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={goToNextStep}
+                      className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500
+                             text-white px-4 sm:px-5 py-1.5 sm:py-2 
+                             rounded-full flex items-center shadow-md hover:shadow-lg transition-all duration-300
+                             focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
                     >
-                      <div className="flex items-center">
-                        <div className="p-2 bg-yellow-50 rounded-lg mr-3">
-                          <selected.icon className="h-6 w-6 text-yellow-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-sm">{selected.title}</h3>
-                          <p className="text-xs text-gray-600">{selected.description}</p>
-                        </div>
+                      <span className="font-medium text-xs">Continuer</span>
+                      <ArrowRightIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                    </motion.button>
+                  </div>
+                </motion.div>
+                
+                {/* Mobile Step 2 Content */}
+                <motion.div
+                  key="mobile-step2"
+                  variants={stepTransition}
+                  initial={currentStep === 2 ? "visible" : "hidden"}
+                  animate={currentStep === 2 ? "visible" : "hidden"}
+                  className="mb-3 sm:mb-4 transform scale-[0.98] w-full"
+                  style={{ display: currentStep === 2 ? 'block' : 'none' }}
+                >
+                  <p className="text-center text-gray-600 text-[10px] sm:text-xs mb-2 sm:mb-3">
+                    Vous êtes sur le point de créer un compte :
+                  </p>
+                  <motion.div 
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border-l-4 border-yellow-500 mb-3 sm:mb-4"
+                  >
+                    <div className="flex items-center">
+                      <div className="p-1.5 sm:p-2 bg-yellow-50 rounded-md sm:rounded-lg mr-2 sm:mr-3">
+                        <selected.icon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
                       </div>
-                    </motion.div>
-                    <div className="text-center">
-                      <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setCurrentStep(1)}
-                        className="bg-white hover:bg-gray-50 text-yellow-600 hover:text-yellow-700 px-3 py-1 rounded-full text-xs
-                                border border-gray-200 hover:border-yellow-200 inline-flex items-center
-                                shadow-sm hover:shadow transition-all duration-300"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Modifier mon choix
-                      </motion.button>
+                      <div>
+                        <h3 className="font-semibold text-xs sm:text-sm">{selected.title}</h3>
+                        <p className="text-[9px] sm:text-xs text-gray-600">{selected.description}</p>
+                      </div>
                     </div>
                   </motion.div>
-                )}
+                  <div className="text-center">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setCurrentStep(1)}
+                      className="bg-white hover:bg-gray-50 text-yellow-600 hover:text-yellow-700 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs
+                             border border-gray-200 hover:border-yellow-200 inline-flex items-center
+                             shadow-sm hover:shadow transition-all duration-300"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Modifier mon choix
+                    </motion.button>
+                  </div>
+                </motion.div>
               </div>
 
-              {/* Step 2 content - Sign in with Google (both mobile and desktop) */}
-              {/* Modified: Only show when in step 2, for both mobile and desktop */}
+              {/* Step 2 content - Sign in with Google (responsive for all screens) */}
               {currentStep === 2 && (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="py-4 flex-1 flex flex-col mx-auto w-full overflow-hidden"
+                  className="py-2 sm:py-4 flex-1 flex flex-col mx-auto w-full overflow-hidden"
                 >
                   {/* Error Handling */}
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="mb-4 bg-red-50 border-l-3 border-red-400 rounded-lg p-3 flex items-start"
+                      className="mb-3 sm:mb-4 bg-red-50 border-l-3 border-red-400 rounded-lg p-2.5 sm:p-3 flex items-start"
                       role="alert"
                       aria-live="assertive"
                     >
-                      <ExclamationTriangleIcon className="h-4 w-4 text-red-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-red-700">{error}</p>
+                      <ExclamationTriangleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-400 mr-1.5 sm:mr-2 mt-0.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs text-red-700">{error}</p>
                     </motion.div>
                   )}
 
@@ -651,33 +696,33 @@ export default function Register() {
                     transition={{ delay: 0.3 }}
                     className="text-center"
                   >
-                    <h3 className="text-base md:text-lg font-bold text-gray-800 mb-1 bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
+                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-1 bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
                       Connexion avec Google
                     </h3>
-                    <p className="text-gray-600 text-xs md:text-sm">
+                    <p className="text-[10px] sm:text-xs md:text-sm text-gray-600">
                       Utilisez votre compte Google pour créer votre compte en toute sécurité
                     </p>
                   </motion.div>
 
-                  {/* Security notice with improved style */}
+                  {/* Security notice with improved style and responsiveness */}
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="mt-5 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 flex items-center"
+                    className="mt-3 sm:mt-5 p-2.5 sm:p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 flex items-center"
                   >
-                    <div className="bg-white p-1.5 rounded-full mr-2.5 shadow-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                    <div className="bg-white p-1 sm:p-1.5 rounded-full mr-2 sm:mr-2.5 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <p className="text-blue-800 text-xs font-medium">
+                    <p className="text-blue-800 text-[9px] sm:text-xs font-medium">
                       Pour votre sécurité, TLEFLI utilise uniquement l'authentification Google.
                     </p>
                   </motion.div>
 
-                  {/* Google Sign-In Button - Enhanced with modern style */}
-                  <div className="mt-8 mb-4">
+                  {/* Google Sign-In Button - Enhanced with modern style and better responsiveness */}
+                  <div className="mt-5 sm:mt-8 mb-2 sm:mb-4">
                     <motion.div 
                       whileHover={{ scale: 1.03, y: -2 }}
                       whileTap={{ scale: 0.98 }}
@@ -687,11 +732,11 @@ export default function Register() {
                         type="button"
                         onClick={handleGoogleAuth}
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center py-3.5 px-5 
-                              rounded-xl text-sm font-medium text-gray-700 bg-white 
+                        className="w-full flex items-center justify-center py-2.5 sm:py-3.5 px-4 sm:px-5 
+                              rounded-xl text-xs sm:text-sm font-medium text-gray-700 bg-white 
                               border border-gray-200 hover:border-yellow-300
                               focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2
-                              transition-all duration-300 shadow-lg hover:shadow-xl
+                              transition-all duration-300 shadow-md sm:shadow-lg hover:shadow-xl
                               relative overflow-hidden group"
                       >
                         <span className="absolute inset-0 w-0 bg-gradient-to-r from-yellow-50 to-yellow-100 transition-all duration-500 ease-out group-hover:w-full"></span>
@@ -699,16 +744,16 @@ export default function Register() {
                         
                         {isLoading ? (
                           <div className="flex items-center relative z-10">
-                            <svg className="animate-spin h-4 w-4 mr-2 text-yellow-500" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-yellow-500" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span>Connexion en cours...</span>
+                            <span className="text-xs sm:text-sm">Connexion en cours...</span>
                           </div>
                         ) : (
                           <div className="flex items-center relative z-10">
-                            <div className="bg-white p-1.5 rounded-full shadow-sm mr-3 group-hover:shadow-md transition-all duration-300">
-                              <svg className="h-5 w-5" viewBox="0 0 24 24">
+                            <div className="bg-white p-1 sm:p-1.5 rounded-full shadow-sm mr-2.5 sm:mr-3 group-hover:shadow-md transition-all duration-300">
+                              <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
                                 <path
                                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                                   fill="#4285F4"
@@ -727,7 +772,7 @@ export default function Register() {
                                 />
                               </svg>
                             </div>
-                            <span className="text-sm font-medium group-hover:text-gray-900 transition-colors duration-300">
+                            <span className="text-xs sm:text-sm font-medium group-hover:text-gray-900 transition-colors duration-300">
                               S'inscrire avec Google
                             </span>
                           </div>
@@ -740,16 +785,16 @@ export default function Register() {
             </div>
           </div>
           
-          {/* Unified footer with better styling for legal info */}
-          <div className="bg-gray-50 p-3 border-t border-gray-100 flex flex-col items-center">
-            <div className="text-center text-xs text-gray-500">
+          {/* Unified footer with better sizing and spacing for small screens */}
+          <div className="bg-gray-50 p-2.5 sm:p-3 border-t border-gray-100 flex flex-col items-center">
+            <div className="text-center text-[9px] sm:text-xs text-gray-500">
               <p>En continuant, vous acceptez les Conditions d'utilisation de TLEFLI</p>
-              <div className="mt-1 mb-2">
+              <div className="mt-1 mb-1.5 sm:mb-2">
                 <Link
                   to="/conditions"
                   className="inline-flex items-center text-yellow-600 hover:text-yellow-700 font-medium transition duration-300"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Conditions d'utilisation
@@ -759,7 +804,7 @@ export default function Register() {
             
             {/* Mobile-only login link */}
             <div className="md:hidden text-center">
-              <p className="text-xs text-gray-600">
+              <p className="text-[9px] sm:text-xs text-gray-600">
                 Vous avez déjà un compte ?{' '}
                 <Link
                   to="/login"
