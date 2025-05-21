@@ -375,7 +375,7 @@ const MatchesList = ({
     }
   };
 
-  // Add safe rendering for different states
+  // Add safe rendering for no matches
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -392,7 +392,6 @@ const MatchesList = ({
     );
   }
 
-  // Add explicit check for empty or undefined matches
   if (!matches || matches.length === 0) {
     return (
       <div className="text-center py-6 bg-gray-50 rounded-lg">
@@ -404,11 +403,6 @@ const MatchesList = ({
   return (
     <div className="space-y-4">
       {matches.map((match) => {
-        // Ensure match and match.item are valid objects with default values
-        if (!match || !match.item) {
-          return null; // Skip invalid matches
-        }
-        
         // Prepare match data with default twin object if needed
         const enhancedMatch = {
           ...match,

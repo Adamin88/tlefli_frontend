@@ -19,9 +19,19 @@ import * as CategoryIcons from '../config/categoriesConfig';
 const ImageModal = ({ images, initialIndex = 0, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   
-  if (!images || images.length === 0) return null;
+  // Added null check to prevent undefined return
+  if (!images || images.length === 0) {
+    return null;
+  }
   
-  const currentImage = images[currentIndex];
+  // Ensure currentIndex is valid
+  const safeIndex = currentIndex >= 0 && currentIndex < images.length ? currentIndex : 0;
+  const currentImage = images[safeIndex];
+  
+  // Ensure currentImage exists before using it
+  if (!currentImage) {
+    return null;
+  }
   
   const goToPrevious = (e) => {
     e.stopPropagation();
@@ -85,7 +95,7 @@ const ImageModal = ({ images, initialIndex = 0, onClose }) => {
                       setCurrentIndex(index);
                     }}
                     className={`w-2.5 h-2.5 rounded-full ${
-                      index === currentIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/80'
+                      index === safeIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/80'
                     }`}
                     aria-label={`Go to image ${index + 1}`}
                   />
@@ -135,7 +145,8 @@ const BaseMatchCard = ({
 
   useEffect(() => {
     // Animate score counter on mount
-    const scoreTarget = Math.round(match.score);
+    // Default to 0 if match.score is undefined
+    const scoreTarget = match?.score ? Math.round(match.score) : 0;
     let start = 0;
     const duration = 1500;
     const frameRate = 1000 / 60; // 60fps
@@ -155,7 +166,7 @@ const BaseMatchCard = ({
     }, frameRate);
     
     return () => clearInterval(timer);
-  }, [match.score]);
+  }, [match?.score]);
   
   // Enhanced toggle details with animation management
   const toggleDetails = () => {
@@ -242,11 +253,12 @@ const BaseMatchCard = ({
     return `il y a ${years} an${years > 1 ? 's' : ''}`;
   };
 
+  // Enhanced error handling for invalid match data
   if (!match || !match.item) {
     return (
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-4">
-          <div className="text-red-500">Invalid match data</div>
+          <div className="text-red-500">Données de correspondance invalides</div>
         </div>
       </div>
     );
@@ -265,6 +277,21 @@ const BaseMatchCard = ({
   const scoreColorClass = getScoreColor(animatedScore);
   const scoreRingColorClass = scoreColorClass.replace('text-', 'ring-');
 
+  // Safely get type and status values with fallbacks
+  const itemType = match.item.type || 'found';
+  const itemStatus = match.item.status || 'posted';
+  
+  // Safe values for type and status badges
+  const typeBadge = typeBadges[itemType] || typeBadges.found;
+  const statusBadge = statusBadges[itemStatus] || statusBadges.posted;
+
+  // Safe category and subcategory values
+  const categoryKey = match.item.category && CATEGORIES_CONFIG[match.item.category] ? match.item.category : null;
+  const subcategoryKey = categoryKey && match.item.subcategory && CATEGORIES_CONFIG[categoryKey]?.subcategories[match.item.subcategory] ? match.item.subcategory : null;
+
+  // Get subcategory icon safely
+  const subcategoryIcon = categoryKey && subcategoryKey && CATEGORIES_CONFIG[categoryKey]?.subcategories[subcategoryKey]?.icon;
+
   return (
     <div 
       className={`bg-white rounded-xl shadow-lg hover:shadow-xl border border-gray-100 
@@ -277,22 +304,24 @@ const BaseMatchCard = ({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             {/* Show subcategory icon before title instead of category icon */}
-            {CATEGORIES_CONFIG[match.item.category]?.subcategories[match.item.subcategory]?.icon && (
+            {subcategoryIcon && (
               <div className="text-gray-500 flex-shrink-0">
                 {React.createElement(
-                  CategoryIcons[CATEGORIES_CONFIG[match.item.category].subcategories[match.item.subcategory].icon.name], 
+                  CategoryIcons[subcategoryIcon.name] || (() => null), 
                   { className: "h-5 w-5" }
                 )}
               </div>
             )}
-            <h3 className="text-lg font-medium text-gray-900 truncate max-w-[200px]">{match.item.title}</h3>
+            <h3 className="text-lg font-medium text-gray-900 truncate max-w-[200px]">
+              {match.item.title || 'Sans titre'}
+            </h3>
             
             {/* Type and status badges */}
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadges[match.item.type].bg} ${typeBadges[match.item.type].text}`}>
-              {typeBadges[match.item.type].label}
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadge.bg} ${typeBadge.text}`}>
+              {typeBadge.label}
             </span>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadges[match.item.status].bg} ${statusBadges[match.item.status].text}`}>
-              {statusBadges[match.item.status].label}
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text}`}>
+              {statusBadge.label}
             </span>
           </div>
           
@@ -389,15 +418,15 @@ const BaseMatchCard = ({
               )
             )}
             
-            {/* Removed the redundant "Date de publication" section */}
-            
             {/* Category information without icon */}
             <div className="flex items-start">
               <TagIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5 mr-2" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-700">Catégorie</p>
                 <p className="text-sm text-gray-600">
-                  {`${CATEGORIES_CONFIG[match.item.category]?.label} - ${CATEGORIES_CONFIG[match.item.category]?.subcategories[match.item.subcategory]?.label}`}
+                  {categoryKey && subcategoryKey ? 
+                    `${CATEGORIES_CONFIG[categoryKey]?.label || 'Catégorie'} - ${CATEGORIES_CONFIG[categoryKey]?.subcategories[subcategoryKey]?.label || 'Sous-catégorie'}` : 
+                    'Catégorie non spécifiée'}
                 </p>
               </div>
             </div>
@@ -418,7 +447,7 @@ const BaseMatchCard = ({
                 <div className="relative overflow-hidden rounded-lg group h-32 w-full md:w-32">
                   <img
                     src={`data:${match.item.images[0].contentType};base64,${match.item.images[0].data}`}
-                    alt={match.item.title}
+                    alt={match.item.title || 'Image de l\'objet'}
                     className="w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
                   />
                   <div 
@@ -487,7 +516,7 @@ const BaseMatchCard = ({
                         {key.replace(/([A-Z])/g, ' $1').trim()}
                       </span>
                       <span className="mt-1 text-sm text-gray-900">
-                        {Array.isArray(value) ? value.join(', ') : value}
+                        {Array.isArray(value) ? value.join(', ') : String(value || '')}
                       </span>
                     </div>
                   ))}

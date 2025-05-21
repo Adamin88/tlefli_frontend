@@ -454,7 +454,7 @@ const ItemVerificationScanner = ({
     }
   };
 
-  // Return a consistent UI structure
+  // Ensure we always return something
   return (
     <div className="bg-white rounded-lg shadow-lg p-4 max-w-md mx-auto">
       {/* Header with visible debug info */}
@@ -469,23 +469,6 @@ const ItemVerificationScanner = ({
           </button>
         )}
       </div>
-
-      {!scanning && !verificationResult && (
-        <div>
-          <div id="reader" className="mb-4"></div>
-          <p className="text-sm text-gray-500 text-center mb-4">
-            Placez le QR code de l'objet à vérifier dans le cadre
-          </p>
-          {scanning && (
-            <button
-              onClick={stopScanner}
-              className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none"
-            >
-              Arrêter le scan
-            </button>
-          )}
-        </div>
-      )}
 
       {scanning ? (
         <div className="mb-4">

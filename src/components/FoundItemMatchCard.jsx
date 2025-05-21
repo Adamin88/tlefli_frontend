@@ -22,16 +22,6 @@ const FoundItemMatchCard = ({
   isSourceItem = false,
   onVerificationComplete
 }) => {
-  // Ensure the component has valid inputs before rendering
-  if (!match || !match.item) {
-    console.warn('FoundItemMatchCard received invalid match data:', match);
-    return (
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <p className="text-gray-500 text-center">Données de correspondance invalides</p>
-      </div>
-    );
-  }
-
   const [showDetails, setShowDetails] = useState(false);
   const [secretAnswer, setSecretAnswer] = useState('');
   const [showSecretQuestion, setShowSecretQuestion] = useState(false);
