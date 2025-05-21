@@ -5,7 +5,7 @@ const ImageSlider = ({ images, onImageClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const sliderRef = useRef(null);
 
-  // Return null for empty images array instead of undefined
+  // Return a placeholder if there are no images
   if (!images || images.length === 0) {
     return (
       <div className="h-64 w-full bg-gray-100 rounded-lg flex items-center justify-center">
