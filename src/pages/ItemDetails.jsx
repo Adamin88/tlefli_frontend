@@ -680,7 +680,97 @@ export default function ItemDetails() {
       return IconComponent ? <IconComponent className="h-5 w-5 text-gray-600 mr-2" /> : null;
     };
 
-    // Define the QRCodeModal component here to ensure it has access to variables
+    // Add the printQRCode function inside the try block
+    const printQRCode = () => {
+      const printWindow = window.open('', '_blank');
+      
+      // Create a QR code SVG data URL instead of using an image URL
+      const qrCodeSvg = document.querySelector(".QRCodeModal svg");
+      let qrCodeHtml = '';
+      
+      if (qrCodeSvg) {
+        // If we can find the SVG in the DOM, use it directly
+        const svgData = new XMLSerializer().serializeToString(qrCodeSvg);
+        qrCodeHtml = svgData;
+      } else {
+        // Fallback to an API endpoint that generates QR codes if available
+        qrCodeHtml = `<img src="${baseUrl}/api/items/${item._id}/qrcode?size=300" alt="QR Code" style="width:300px;height:300px;" />`;
+      }
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>QR Code - ${item.title || item.reference || 'Item'}</title>
+            <style>
+              body {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                font-family: Arial, sans-serif;
+              }
+              .qr-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+              }
+              .qr-title {
+                font-size: 16px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                text-align: center;
+              }
+              .qr-reference {
+                font-size: 14px;
+                margin-bottom: 15px;
+                text-align: center;
+              }
+              .qr-instructions {
+                font-size: 12px;
+                color: #666;
+                margin-top: 15px;
+                text-align: center;
+                max-width: 300px;
+              }
+              @media print {
+                .no-print {
+                  display: none;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <button class="no-print" onclick="window.print()" style="position:fixed; top:20px; right:20px; padding:10px; background:#4f46e5; color:white; border:none; border-radius:4px; cursor:pointer;">
+              Imprimer
+            </button>
+            <div class="qr-container">
+              <div class="qr-title">${item.title || 'Objet perdu/trouvé'}</div>
+              ${item.reference ? `<div class="qr-reference">Réf: ${item.reference}</div>` : ''}
+              <div style="margin: 20px 0;">
+                ${qrCodeHtml}
+              </div>
+              <div class="qr-instructions">
+                Scannez ce code QR pour accéder aux détails de l'objet
+                ${item.reference ? `<br>Référence: ${item.reference}` : ''}
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      // Give a moment to load before printing
+      setTimeout(() => {
+        printWindow.focus();
+      }, 300);
+    };
+
+    // Define the QRCodeModal component here (after printQRCode is defined)
     const QRCodeModal = ({ value, title, reference, onClose }) => {
       if (!value) return null;
       
@@ -1088,11 +1178,22 @@ export default function ItemDetails() {
     );
   } catch (renderError) {
     console.error("Error rendering ItemDetails:", renderError);
+    console.error("Error details:", renderError.stack); // Log the full stack trace
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-red-50 p-4 rounded-lg">
+        <div className="bg-red-50 p-4 rounded-lg max-w-lg">
           <div className="text-red-700 font-medium">Error displaying item details</div>
-          <div className="text-red-600 mt-1">Please try refreshing the page.</div>
+          <div className="text-red-600 mt-1">
+            {renderError.message || "An unexpected error occurred"}
+          </div>
+          <div className="mt-4">
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
       </div>
     );
