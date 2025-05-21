@@ -489,15 +489,16 @@ export default function ItemDetails() {
     }
   };
 
-  const renderSecretAnswers = () => {
-    if (!item.secretAnswers?.length) {
-      return <div className="text-sm text-gray-500">Aucune réponse soumise</div>;
+  // Replace the unused renderSecretAnswers function with a proper implementation
+  const renderSecretAnswersSection = () => {
+    if (!item.secretAnswers || !item.secretAnswers.length) {
+      return null;
     }
 
     return (
       <div className="space-y-4">
         {item.secretAnswers.map((answer) => (
-          <SecretAnswerVerification
+          answer && <SecretAnswerVerification
             key={answer._id}
             answer={answer}
             item={item}
@@ -621,21 +622,21 @@ export default function ItemDetails() {
     );
   };
 
-  // Fonction pour obtenir l'icône de la catégorie
+  // Improved getCategoryIcon function with better null checks
   const getCategoryIcon = (category) => {
     if (!category || !CATEGORIES_CONFIG[category]) return null;
     
-    const IconComponent = CATEGORIES_CONFIG[category].icon;
+    const IconComponent = CATEGORIES_CONFIG[category]?.icon || null;
     return IconComponent ? <IconComponent className="h-5 w-5 text-gray-600" /> : null;
   };
 
-  // Fonction pour obtenir l'icône de la sous-catégorie
+  // Improved getSubcategoryIcon function with better null checks
   const getSubcategoryIcon = (category, subcategory) => {
-    if (!category || !subcategory || !CATEGORIES_CONFIG[category]?.subcategories[subcategory]) {
+    if (!category || !subcategory || !CATEGORIES_CONFIG[category]?.subcategories?.[subcategory]) {
       return null;
     }
     
-    const IconComponent = CATEGORIES_CONFIG[category].subcategories[subcategory].icon;
+    const IconComponent = CATEGORIES_CONFIG[category]?.subcategories[subcategory]?.icon || null;
     return IconComponent ? <IconComponent className="h-5 w-5 text-gray-600 mr-2" /> : null;
   };
 
@@ -865,7 +866,7 @@ export default function ItemDetails() {
             {/* Title with subcategory icon */}
             <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center">
               {getSubcategoryIcon(item.category, item.subcategory)}
-              {item.title}
+              {item.title || 'Sans titre'}
             </h1>
             
             {/* Publication date - small text under title */}
@@ -1055,17 +1056,23 @@ export default function ItemDetails() {
 
       {/* ROW 2: Secret Answer Verification */}
       {(() => {
-        const isFoundItem = item.type === 'found';
-        const hasSecretAnswers = !!item.secretAnswers;
-        const hasAnswersLength = item.secretAnswers && item.secretAnswers.length > 0;
-        const hasCurrentUser = !!currentUser;
-        const isReporter = currentUser && item.reportedBy && (
+        // Make sure all checks are for truthy values, not just undefined
+        if (!item || item.type !== 'found' || !item.secretAnswers || !item.secretAnswers.length || !currentUser) {
+          return null;
+        }
+        
+        // Check if currentUser is the reporter
+        const isReporter = item.reportedBy && (
           typeof item.reportedBy === 'object' 
-            ? currentUser.id.toString() === item.reportedBy._id.toString() 
-            : currentUser.id.toString() === item.reportedBy.toString()
+            ? currentUser.id?.toString() === item.reportedBy._id?.toString() 
+            : currentUser.id?.toString() === item.reportedBy?.toString()
         );
         
-        return isFoundItem && hasSecretAnswers && hasAnswersLength && hasCurrentUser && isReporter && (
+        if (!isReporter) {
+          return null;
+        }
+        
+        return (
           <div className="mb-6">
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
               <div className="p-4 border-b border-gray-200">
@@ -1074,7 +1081,7 @@ export default function ItemDetails() {
               <div className="p-4">
                 <div className="space-y-4">
                   {item.secretAnswers.map((answer) => (
-                    <SecretAnswerVerification
+                    answer && <SecretAnswerVerification
                       key={answer._id}
                       answer={answer}
                       item={item}
@@ -1102,8 +1109,8 @@ export default function ItemDetails() {
           <div className="p-4">
             <MatchesList 
               itemId={id} 
-              isTwinned={!!item.twin}
-              twinnedItemId={item.twin?._id}
+              isTwinned={Boolean(item.twin)} // Ensure boolean value
+              twinnedItemId={item.twin?._id || null} // Ensure null if not present
               onMatchedItemStatusUpdate={handleMatchedItemsStatusUpdate} 
               onStatusUpdate={handleStatusUpdate} 
               onTwinItems={handleTwinItems} 
