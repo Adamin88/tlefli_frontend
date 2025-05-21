@@ -5,17 +5,12 @@ import {
   XMarkIcon,
   QuestionMarkCircleIcon,
   CreditCardIcon,
-  MapPinIcon,
-  CalendarIcon,
-  TagIcon
+  MapPinIcon
 } from '@heroicons/react/24/outline';
 import BaseMatchCard from './BaseMatchCard';
 import itemsService from '../services/itemsService';
 import PaymentButton from './PaymentButton';
 import toast from './Toast/index';
-import { CATEGORIES_CONFIG } from '../config/categoriesConfig';
-// Import all category icons
-import * as CategoryIcons from '../config/categoriesConfig';
 
 const FoundItemMatchCard = ({
   match,
@@ -1639,7 +1634,6 @@ const renderSecretQuestionForm = () => {
       forceRender={forceRender}
       renderActionButtons={renderActionButtons}
       renderHeaderExtras={renderHeaderExtras}
-      renderHeader={renderHeader} // Add this line to use custom header
     >
       {renderSecretQuestionContent()}
     </BaseMatchCard>
