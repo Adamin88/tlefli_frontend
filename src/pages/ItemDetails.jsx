@@ -539,46 +539,22 @@ export default function ItemDetails() {
     });
   };
 
-  // Add this as a direct button component that will always show for all users
-  const ScannerButton = () => {
-    return (
-      <div className="fixed right-6 bottom-6 z-50" style={{ zIndex: 1000 }}>
-        <button
-          type="button"
-          onClick={() => setShowVerificationScanner(true)}
-          style={{
-            backgroundColor: '#4f46e5',
-            color: 'white',
-            borderRadius: '9999px',
-            padding: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            border: 'none',
-            cursor: 'pointer',
-            width: '56px',
-            height: '56px'
-          }}
-        >
-          <CameraIcon style={{ height: '24px', width: '24px' }} />
-        </button>
-      </div>
-    );
-  };
-
-  // Replace the verification section with this simplified version - available for all users
+  // This verification section was defined but might not be used correctly
   const renderVerificationSection = () => {
+    if (!id) return null;
+    
     if (showVerificationScanner) {
       return (
         <div className="mt-6 bg-white shadow rounded-lg">
           <div className="p-4">
-            <ItemVerificationScanner
-              currentItemId={id}
-              onVerificationSuccess={handleVerificationSuccess}
-              onVerificationFailure={handleVerificationFailure}
-              onClose={() => setShowVerificationScanner(false)}
-            />
+            {ItemVerificationScanner && (
+              <ItemVerificationScanner
+                currentItemId={id}
+                onVerificationSuccess={handleVerificationSuccess}
+                onVerificationFailure={handleVerificationFailure}
+                onClose={() => setShowVerificationScanner(false)}
+              />
+            )}
           </div>
         </div>
       );
@@ -607,7 +583,7 @@ export default function ItemDetails() {
               cursor: 'pointer'
             }}
           >
-            <CameraIcon style={{ height: '20px', width: '20px', marginRight: '8px' }} />
+            {CameraIcon && <CameraIcon style={{ height: '20px', width: '20px', marginRight: '8px' }} />}
             <span>Activer le scanner</span>
           </button>
         </div>
@@ -615,24 +591,37 @@ export default function ItemDetails() {
     );
   };
 
-  // Fonction pour obtenir l'icône de la catégorie
-  const getCategoryIcon = (category) => {
-    if (!category || !CATEGORIES_CONFIG[category]) return null;
+  // Improved scanner button with better error handling
+  const ScannerButton = () => {
+    if (!CameraIcon) return null;
     
-    const IconComponent = CATEGORIES_CONFIG[category].icon;
-    return IconComponent ? <IconComponent className="h-5 w-5 text-gray-600" /> : null;
+    return (
+      <div className="fixed right-6 bottom-6 z-50" style={{ zIndex: 1000 }}>
+        <button
+          type="button"
+          onClick={() => setShowVerificationScanner(true)}
+          style={{
+            backgroundColor: '#4f46e5',
+            color: 'white',
+            borderRadius: '9999px',
+            padding: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            border: 'none',
+            cursor: 'pointer',
+            width: '56px',
+            height: '56px'
+          }}
+        >
+          <CameraIcon style={{ height: '24px', width: '24px' }} />
+        </button>
+      </div>
+    );
   };
 
-  // Fonction pour obtenir l'icône de la sous-catégorie
-  const getSubcategoryIcon = (category, subcategory) => {
-    if (!category || !subcategory || !CATEGORIES_CONFIG[category]?.subcategories[subcategory]) {
-      return null;
-    }
-    
-    const IconComponent = CATEGORIES_CONFIG[category].subcategories[subcategory].icon;
-    return IconComponent ? <IconComponent className="h-5 w-5 text-gray-600 mr-2" /> : null;
-  };
-
+  // Make sure to handle edge cases in the render method
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -646,525 +635,337 @@ export default function ItemDetails() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-red-50 p-4 rounded-lg">
           <div className="text-red-700 font-medium">Error loading item details</div>
-          <div className="text-red-600 mt-1">{error}</div>
+          <div className="text-red-600 mt-1">{error || "Item not found"}</div>
         </div>
       </div>
     );
   }
 
-  const typeColors = {
-    lost: 'bg-red-100 text-red-800',
-    found: 'bg-green-100 text-green-800'
-  };
-
-  const statusColors = {
-    posted: 'bg-gray-100 text-gray-800',
-    authenticating: 'bg-yellow-100 text-yellow-800',
-    authenticated: 'bg-blue-100 text-blue-800',
-    returning: 'bg-purple-100 text-purple-800',
-    returned: 'bg-green-100 text-green-800'
-  };
-
-  const formatDate = (dateString) => {
-    return format(new Date(dateString), 'dd MMMM yyyy', { locale: fr });
-  };
-
-  // Get the base URL from the current location
-  const baseUrl = window.location.origin;
-
-  const QRCodeModal = ({ value, title, reference, onClose }) => {
-    if (!value) return null;
-    
+  try {
     return (
-      <div 
-        className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        <div className="relative bg-white rounded-lg p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 text-gray-400 hover:text-gray-500"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{title || 'QR Code'}</h3>
-            {reference && <p className="text-sm text-gray-500 mb-4">Référence: {reference}</p>}
-            <div className="flex justify-center mb-4 QRCodeModal">
-              <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
-                <QRCodeGenerator 
-                  value={value}
-                  size={250}
-                  itemId={id}
-                  itemTitle={title}
-                  reference={reference}
-                  hideButtons={true}
-                />
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 mb-4">
-              Ce code QR contient un lien direct vers les détails de cet objet.
-            </p>
-            <button
-              onClick={printQRCode}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <PrinterIcon className="h-4 w-4 mr-1.5" />
-              Imprimer
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Function to print QR code
-  const printQRCode = () => {
-    const printWindow = window.open('', '_blank');
-    
-    // Create a QR code SVG data URL instead of using an image URL
-    const qrCodeSvg = document.querySelector(".QRCodeModal svg");
-    let qrCodeHtml = '';
-    
-    if (qrCodeSvg) {
-      // If we can find the SVG in the DOM, use it directly
-      const svgData = new XMLSerializer().serializeToString(qrCodeSvg);
-      qrCodeHtml = svgData;
-    } else {
-      // Fallback to an API endpoint that generates QR codes if available
-      qrCodeHtml = `<img src="${baseUrl}/api/items/${item._id}/qrcode?size=300" alt="QR Code" style="width:300px;height:300px;" />`;
-    }
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>QR Code - ${item.title || item.reference || 'Item'}</title>
-          <style>
-            body {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
-              font-family: Arial, sans-serif;
-            }
-            .qr-container {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              padding: 20px;
-              border: 1px solid #ccc;
-              border-radius: 8px;
-            }
-            .qr-title {
-              font-size: 16px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              text-align: center;
-            }
-            .qr-reference {
-              font-size: 14px;
-              margin-bottom: 15px;
-              text-align: center;
-            }
-            .qr-instructions {
-              font-size: 12px;
-              color: #666;
-              margin-top: 15px;
-              text-align: center;
-              max-width: 300px;
-            }
-            @media print {
-              .no-print {
-                display: none;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <button class="no-print" onclick="window.print()" style="position:fixed; top:20px; right:20px; padding:10px; background:#4f46e5; color:white; border:none; border-radius:4px; cursor:pointer;">
-            Imprimer
-          </button>
-          <div class="qr-container">
-            <div class="qr-title">${item.title || 'Objet perdu/trouvé'}</div>
-            ${item.reference ? `<div class="qr-reference">Réf: ${item.reference}</div>` : ''}
-            <div style="margin: 20px 0;">
-              ${qrCodeHtml}
-            </div>
-            <div class="qr-instructions">
-              Scannez ce code QR pour accéder aux détails de l'objet
-              ${item.reference ? `<br>Référence: ${item.reference}` : ''}
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    // Give a moment to load before printing
-    setTimeout(() => {
-      printWindow.focus();
-    }, 300);
-  };
-
-  // Add this function to implement proper secret answers section rendering
-  const renderSecretAnswersSection = () => {
-    // Make sure all checks are for truthy values, not just undefined
-    if (!item || item.type !== 'found' || !Array.isArray(item.secretAnswers) || !item.secretAnswers.length || !currentUser) {
-      return null;
-    }
-    
-    // Check if currentUser is the reporter with proper null checks
-    let isReporter = false;
-    if (item.reportedBy && currentUser?.id) {
-      if (typeof item.reportedBy === 'object' && item.reportedBy?._id) {
-        isReporter = currentUser.id.toString() === item.reportedBy._id.toString();
-      } else if (typeof item.reportedBy === 'string') {
-        isReporter = currentUser.id.toString() === item.reportedBy.toString();
-      }
-    }
-    
-    if (!isReporter) {
-      return null;
-    }
-    
-    return (
-      <div className="mb-6">
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="font-medium text-gray-900">Réponses à la question secrète</h2>
-          </div>
-          <div className="p-4">
-            <div className="space-y-4">
-              {item.secretAnswers.map((answer) => (
-                answer && answer._id ? (
-                  <SecretAnswerVerification
-                    key={answer._id}
-                    answer={answer}
-                    item={item}
-                    onVerificationComplete={handleVerificationComplete}
-                  />
-                ) : null
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Navigation and Actions Bar */}
-      <div className="flex justify-between items-center mb-6">
-        <Link
-          to="/items"
-          className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-        >
-          <ArrowLeftIconSolid className="h-4 w-4 mr-2" />
-          Retour à la liste
-        </Link>
-        {currentUser && (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Navigation and Actions Bar */}
+        <div className="flex justify-between items-center mb-6">
           <Link
-            to={`/items/${item._id}/edit`}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 shadow-sm transition-colors duration-200"
+            to="/items"
+            className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
           >
-            <PencilIcon className="h-4 w-4 mr-2" />
-            Modifier
+            <ArrowLeftIconSolid className="h-4 w-4 mr-2" />
+            Retour à la liste
           </Link>
-        )}
-      </div>
+          {currentUser && (
+            <Link
+              to={`/items/${item._id}/edit`}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 shadow-sm transition-colors duration-200"
+            >
+              <PencilIcon className="h-4 w-4 mr-2" />
+              Modifier
+            </Link>
+          )}
+        </div>
 
-      {/* ROW 1: Item Details and QR Code */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Item Details Card - Takes full row if no images, otherwise 2/3 of the row on large screens */}
-        <div className={`${item.images && item.images.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white rounded-xl shadow-md overflow-hidden`}>
-          {/* Status Header */}
-          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${typeColors[item.type]}`}>
-                {item.type === 'lost' ? 'Objet perdu' : 'Objet trouvé'}
-              </span>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColors[item.status]}`}>
-                {item.status === 'posted' ? 'Publié' : 
-                 item.status === 'authenticating' ? 'En vérification' : 
-                 item.status === 'authenticated' ? 'Authentifié' : 
-                 item.status === 'returning' ? 'En restitution' : 
-                 item.status === 'returned' ? 'Restitué' : 
-                 item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-              </span>
-              <span className="ml-auto inline-flex items-center text-sm text-gray-600 font-medium bg-gray-50 px-3 py-1 rounded-md border border-gray-200">
-                Réf: {item.reference}
-              </span>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6">
-            {/* Title with subcategory icon */}
-            <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center">
-              {getSubcategoryIcon(item.category, item.subcategory)}
-              {item.title}
-            </h1>
-            
-            {/* Publication date - small text under title */}
-            <div className="flex items-center text-xs text-gray-500 mb-4">
-              <ClockIcon className="h-3.5 w-3.5 mr-1 text-gray-400" />
-              <span>Publié {formatRelativeDate(item.createdAt)}</span>
-            </div>
-            
-            {/* Publication Date, Found/Lost Date, and QR Code Side-by-Side */}
-            <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
-              {/* Dates Section */}
-              <div className="flex flex-col gap-2">
-                {/* Publication date moved above, removing from here */}
-                <div className="inline-flex items-center text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-md">
-                  <CalendarIcon className="h-4 w-4 mr-1.5 text-gray-400" />
-                  <span>
-                    {item.type === 'lost' ? 'Perdu le ' : 'Trouvé le '} 
-                    {formatDate(item.date)}
-                  </span>
-                </div>
-                {/* Location moved here, close to dates */}
-                {item.location && (
-                  <div className="inline-flex items-center text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-md">
-                    <MapPinIcon className="h-4 w-4 mr-1.5 text-gray-400" />
-                    <span>{item.location.address}</span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Compact QR Code */}
-              <div className="flex items-center bg-gray-50 rounded-md p-2 gap-3">
-                <div className="bg-white p-1 rounded-lg shadow-sm border border-gray-200">
-                  <QRCodeGenerator 
-                    value={`${baseUrl}/items/${item._id}`}
-                    size={70}
-                    itemId={item._id}
-                    itemTitle={item.title}
-                    reference={item.reference}
-                    hideButtons={true}
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <button
-                    onClick={() => setShowFullQR(true)}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
-                  >
-                    <QrCodeIcon className="h-3 w-3 mr-1" />
-                    Agrandir
-                  </button>
-                  <button
-                    onClick={() => setShowVerificationScanner(true)}
-                    className="mt-1 text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
-                  >
-                    <CameraIcon className="h-3 w-3 mr-1" />
-                    Scanner
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Reward Banner for Lost Items */}
-            {item.type === 'lost' && item.reward && (
-              <div className="mb-6">
-                <div className="inline-block bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-                  <div className="flex items-center">
-                    <span className="text-amber-500 text-xl mr-2">🎁</span>
-                    <span className="text-amber-700 font-medium">
-                      Récompense: {item.reward.amount} {item.reward.currency}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Description with heading */}
-            <div className="mb-6 pb-6 border-b border-gray-100">
-              <h2 className="text-lg font-medium text-gray-900 mb-2">Description</h2>
-              <div className="prose max-w-none text-gray-600">
-                {item.description}
-              </div>
-            </div>
-
-            {/* Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
-              {/* Category - Only use TagIcon (no subcategory icon here) */}
-              <div className="flex items-center text-sm text-gray-600">
-                <TagIcon className="h-5 w-5 mr-3 text-gray-400 flex-shrink-0" />
-                <span>
-                  {CATEGORIES_CONFIG[item.category]?.label}
-                  {item.subcategory && (
-                    <>
-                      {' - '}
-                      {CATEGORIES_CONFIG[item.category]?.subcategories[item.subcategory]?.label}
-                    </>
-                  )}
+        {/* ROW 1: Item Details and QR Code */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Item Details Card - Takes full row if no images, otherwise 2/3 of the row on large screens */}
+          <div className={`${item.images && item.images.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white rounded-xl shadow-md overflow-hidden`}>
+            {/* Status Header */}
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${typeColors[item.type]}`}>
+                  {item.type === 'lost' ? 'Objet perdu' : 'Objet trouvé'}
+                </span>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColors[item.status]}`}>
+                  {item.status === 'posted' ? 'Publié' : 
+                   item.status === 'authenticating' ? 'En vérification' : 
+                   item.status === 'authenticated' ? 'Authentifié' : 
+                   item.status === 'returning' ? 'En restitution' : 
+                   item.status === 'returned' ? 'Restitué' : 
+                   item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                </span>
+                <span className="ml-auto inline-flex items-center text-sm text-gray-600 font-medium bg-gray-50 px-3 py-1 rounded-md border border-gray-200">
+                  Réf: {item.reference}
                 </span>
               </div>
             </div>
 
-            {/* Subcategory Fields - With subcategory icon */}
-            {item.subcategoryFields && Object.keys(item.subcategoryFields).length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  {getSubcategoryIcon(item.category, item.subcategory)}
-                  <span>Détails spécifiques</span>
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {Object.entries(item.subcategoryFields).map(([key, value]) => (
-                    <div key={key} className="flex flex-col bg-gray-50 p-3 rounded-lg">
-                      <span className="text-sm font-medium text-gray-500 capitalize mb-1">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                      <span className="text-sm text-gray-900">
-                        {Array.isArray(value) ? value.join(', ') : value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            {/* Content */}
+            <div className="p-6">
+              {/* Title with subcategory icon */}
+              <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center">
+                {getSubcategoryIcon(item.category, item.subcategory)}
+                {item.title}
+              </h1>
+              
+              {/* Publication date - small text under title */}
+              <div className="flex items-center text-xs text-gray-500 mb-4">
+                <ClockIcon className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                <span>Publié {formatRelativeDate(item.createdAt)}</span>
               </div>
-            )}
-
-            {/* Contact Information (if user is authorized) */}
-            {currentUser && (currentUser.role === 'business' || currentUser._id === item.reportedBy) && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Contact</h2>
-                <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
-                  {item.reportedBy && (
-                    <div className="flex items-center text-sm text-gray-700">
-                      <UserIcon className="h-5 w-5 mr-3 text-blue-500" />
-                      <span>{item.reportedBy.firstName} {item.reportedBy.lastName}</span>
-                    </div>
-                  )}
-                  {item.contact?.email && (
-                    <div className="flex items-center text-sm text-gray-700">
-                      <EnvelopeIcon className="h-5 w-5 mr-3 text-blue-500" />
-                      <span>{item.contact.email}</span>
-                    </div>
-                  )}
-                  {item.contact?.phone && (
-                    <div className="flex items-center text-sm text-gray-700">
-                      <PhoneIcon className="h-5 w-5 mr-3 text-blue-500" />
-                      <span>{item.contact.phone}</span>
+              
+              {/* Publication Date, Found/Lost Date, and QR Code Side-by-Side */}
+              <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
+                {/* Dates Section */}
+                <div className="flex flex-col gap-2">
+                  {/* Publication date moved above, removing from here */}
+                  <div className="inline-flex items-center text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-md">
+                    <CalendarIcon className="h-4 w-4 mr-1.5 text-gray-400" />
+                    <span>
+                      {item.type === 'lost' ? 'Perdu le ' : 'Trouvé le '} 
+                      {formatDate(item.date)}
+                    </span>
+                  </div>
+                  {/* Location moved here, close to dates */}
+                  {item.location && (
+                    <div className="inline-flex items-center text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-md">
+                      <MapPinIcon className="h-4 w-4 mr-1.5 text-gray-400" />
+                      <span>{item.location.address}</span>
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right side: Images - Only show if there are images */}
-        {item.images && item.images.length > 0 ? (
-          <div className="lg:col-span-1 space-y-6">
-            {/* Images Section with Slider */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="font-medium text-gray-900">Photos ({item.images.length})</h2>
-              </div>
-              <div className="p-4">
-                {/* Image Slider */}
-                <ImageSlider 
-                  images={item.images} 
-                  onImageClick={setSelectedImage} 
-                />
                 
-                {/* Miniatures des images */}
-                <div className="mt-4 grid grid-cols-4 gap-2">
-                  {item.images.slice(0, 8).map((image, index) => (
-                    <div 
-                      key={index} 
-                      className="relative aspect-square rounded-md overflow-hidden cursor-pointer hover:opacity-90 border-2 border-transparent hover:border-yellow-500"
-                      onClick={() => setSelectedImage(image)}
+                {/* Compact QR Code */}
+                <div className="flex items-center bg-gray-50 rounded-md p-2 gap-3">
+                  <div className="bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+                    <QRCodeGenerator 
+                      value={`${baseUrl}/items/${item._id}`}
+                      size={70}
+                      itemId={item._id}
+                      itemTitle={item.title}
+                      reference={item.reference}
+                      hideButtons={true}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => setShowFullQR(true)}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
                     >
-                      <img
-                        src={`data:${image.contentType};base64,${image.data}`}
-                        alt={`${item.title} - Miniature ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                      <QrCodeIcon className="h-3 w-3 mr-1" />
+                      Agrandir
+                    </button>
+                    <button
+                      onClick={() => setShowVerificationScanner(true)}
+                      className="mt-1 text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
+                    >
+                      <CameraIcon className="h-3 w-3 mr-1" />
+                      Scanner
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Reward Banner for Lost Items */}
+              {item.type === 'lost' && item.reward && (
+                <div className="mb-6">
+                  <div className="inline-block bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+                    <div className="flex items-center">
+                      <span className="text-amber-500 text-xl mr-2">🎁</span>
+                      <span className="text-amber-700 font-medium">
+                        Récompense: {item.reward.amount} {item.reward.currency}
+                      </span>
                     </div>
-                  ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description with heading */}
+              <div className="mb-6 pb-6 border-b border-gray-100">
+                <h2 className="text-lg font-medium text-gray-900 mb-2">Description</h2>
+                <div className="prose max-w-none text-gray-600">
+                  {item.description}
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                {/* Category - Only use TagIcon (no subcategory icon here) */}
+                <div className="flex items-center text-sm text-gray-600">
+                  <TagIcon className="h-5 w-5 mr-3 text-gray-400 flex-shrink-0" />
+                  <span>
+                    {CATEGORIES_CONFIG[item.category]?.label}
+                    {item.subcategory && (
+                      <>
+                        {' - '}
+                        {CATEGORIES_CONFIG[item.category]?.subcategories[item.subcategory]?.label}
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Subcategory Fields - With subcategory icon */}
+              {item.subcategoryFields && Object.keys(item.subcategoryFields).length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    {getSubcategoryIcon(item.category, item.subcategory)}
+                    <span>Détails spécifiques</span>
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {Object.entries(item.subcategoryFields).map(([key, value]) => (
+                      <div key={key} className="flex flex-col bg-gray-50 p-3 rounded-lg">
+                        <span className="text-sm font-medium text-gray-500 capitalize mb-1">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                        <span className="text-sm text-gray-900">
+                          {Array.isArray(value) ? value.join(', ') : value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Information (if user is authorized) */}
+              {currentUser && (currentUser.role === 'business' || currentUser._id === item.reportedBy) && (
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Contact</h2>
+                  <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
+                    {item.reportedBy && (
+                      <div className="flex items-center text-sm text-gray-700">
+                        <UserIcon className="h-5 w-5 mr-3 text-blue-500" />
+                        <span>{item.reportedBy.firstName} {item.reportedBy.lastName}</span>
+                      </div>
+                    )}
+                    {item.contact?.email && (
+                      <div className="flex items-center text-sm text-gray-700">
+                        <EnvelopeIcon className="h-5 w-5 mr-3 text-blue-500" />
+                        <span>{item.contact.email}</span>
+                      </div>
+                    )}
+                    {item.contact?.phone && (
+                      <div className="flex items-center text-sm text-gray-700">
+                        <PhoneIcon className="h-5 w-5 mr-3 text-blue-500" />
+                        <span>{item.contact.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right side: Images - Only show if there are images */}
+          {item.images && item.images.length > 0 ? (
+            <div className="lg:col-span-1 space-y-6">
+              {/* Images Section with Slider */}
+              <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="p-4 border-b border-gray-200">
+                  <h2 className="font-medium text-gray-900">Photos ({item.images.length})</h2>
+                </div>
+                <div className="p-4">
+                  {/* Image Slider */}
+                  <ImageSlider 
+                    images={item.images} 
+                    onImageClick={setSelectedImage} 
+                  />
+                  
+                  {/* Miniatures des images */}
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    {item.images.slice(0, 8).map((image, index) => (
+                      <div 
+                        key={index} 
+                        className="relative aspect-square rounded-md overflow-hidden cursor-pointer hover:opacity-90 border-2 border-transparent hover:border-yellow-500"
+                        onClick={() => setSelectedImage(image)}
+                      >
+                        <img
+                          src={`data:${image.contentType};base64,${image.data}`}
+                          alt={`${item.title} - Miniature ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : null}
-      </div>
-
-      {/* ROW 2: Secret Answer Verification */}
-      {renderSecretAnswersSection()}
-
-      {/* ROW 3: Matches Section */}
-      <div className="mb-6">
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <ChartBarIcon className="h-5 w-5 text-yellow-600" />
-                <h2 className="font-medium text-gray-900">Objets potentiellement correspondants</h2>
-              </div>
-            </div>
-          </div>
-          <div className="p-4">
-            <MatchesList 
-              itemId={id} 
-              isTwinned={!!item.twin}
-              twinnedItemId={item.twin?._id}
-              onMatchedItemStatusUpdate={handleMatchedItemsStatusUpdate} 
-              onStatusUpdate={handleStatusUpdate} 
-              onTwinItems={handleTwinItems} 
-            />
-          </div>
+          ) : null}
         </div>
-      </div>
 
-      {/* Verification Scanner Modal */}
-      {showVerificationScanner && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg max-w-lg w-full overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="font-medium text-gray-900">Scanner de vérification QR</h2>
-              <button 
-                onClick={() => setShowVerificationScanner(false)}
-                className="p-1 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
+        {/* ROW 2: Secret Answer Verification - Add explicit null check */}
+        {typeof renderSecretAnswersSection === 'function' ? renderSecretAnswersSection() : null}
+        
+        {/* ROW 3: Matches Section */}
+        <div className="mb-6">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  {ChartBarIcon && <ChartBarIcon className="h-5 w-5 text-yellow-600" />}
+                  <h2 className="font-medium text-gray-900">Objets potentiellement correspondants</h2>
+                </div>
+              </div>
             </div>
             <div className="p-4">
-              <ItemVerificationScanner
-                currentItemId={id}
-                onVerificationSuccess={handleVerificationSuccess}
-                onVerificationFailure={handleVerificationFailure}
-                onClose={() => setShowVerificationScanner(false)}
-              />
+              {MatchesList && (
+                <MatchesList 
+                  itemId={id} 
+                  isTwinned={!!item.twin}
+                  twinnedItemId={item.twin?._id}
+                  onMatchedItemStatusUpdate={handleMatchedItemsStatusUpdate} 
+                  onStatusUpdate={handleStatusUpdate} 
+                  onTwinItems={handleTwinItems} 
+                />
+              )}
             </div>
           </div>
         </div>
-      )}
+        
+        {/* Verification Scanner Modal */}
+        {showVerificationScanner && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-lg max-w-lg w-full overflow-hidden">
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="font-medium text-gray-900">Scanner de vérification QR</h2>
+                <button 
+                  onClick={() => setShowVerificationScanner(false)}
+                  className="p-1 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-4">
+                <ItemVerificationScanner
+                  currentItemId={id}
+                  onVerificationSuccess={handleVerificationSuccess}
+                  onVerificationFailure={handleVerificationFailure}
+                  onClose={() => setShowVerificationScanner(false)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
-      {/* QR Code Modal */}
-      {showFullQR && (
-        <QRCodeModal
-          value={`${baseUrl}/items/${item._id}`}
-          title={item.title}
-          reference={item.reference}
-          onClose={() => setShowFullQR(false)}
-        />
-      )}
+        {/* QR Code Modal */}
+        {showFullQR && (
+          <QRCodeModal
+            value={`${baseUrl}/items/${item._id}`}
+            title={item.title}
+            reference={item.reference}
+            onClose={() => setShowFullQR(false)}
+          />
+        )}
 
-      {/* Image Modal */}
-      {selectedImage && (
-        <ImageModal
-          image={selectedImage}
-          onClose={() => setSelectedImage(null)}
-        />
-      )}
+        {/* Image Modal */}
+        {selectedImage && (
+          <ImageModal
+            image={selectedImage}
+            onClose={() => setSelectedImage(null)}
+          />
+        )}
 
-      {/* Fix 4: Add the ScannerButton to the return statement */}
-      <ScannerButton />
-    </div>
-  );
+        {/* Fix 4: Add the ScannerButton to the return statement */}
+        {typeof ScannerButton === 'function' ? <ScannerButton /> : null}
+      </div>
+    );
+  } catch (renderError) {
+    console.error("Error rendering ItemDetails:", renderError);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-red-50 p-4 rounded-lg">
+          <div className="text-red-700 font-medium">Error displaying item details</div>
+          <div className="text-red-600 mt-1">Please try refreshing the page.</div>
+        </div>
+      </div>
+    );
+  }
 }
