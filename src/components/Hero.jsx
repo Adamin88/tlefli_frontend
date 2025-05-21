@@ -55,23 +55,21 @@ function Hero() {
           >
             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-16 justify-center">
               <Link
-                to="/found"
+                to="/report"
                 className="group relative inline-flex items-center gap-2 overflow-hidden"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 rounded-xl opacity-90 group-hover:opacity-100 transition-opacity duration-300"></span>
                 <span className="relative z-10 rounded-xl px-8 py-3.5 text-sm font-medium text-white transition-all duration-500 sm:text-base text-center flex items-center">
                   J'ai trouvé
-                  <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5 inline-block transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
               </Link>
               <Link
-                to="/lost"
+                to="/report"
                 className="group relative inline-flex items-center gap-2 overflow-hidden"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-500 rounded-xl opacity-90 group-hover:opacity-100 transition-opacity duration-300"></span>
                 <span className="relative z-10 rounded-xl px-8 py-3.5 text-sm font-medium text-white transition-all duration-500 sm:text-base text-center flex items-center">
                   J'ai perdu
-                  <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5 inline-block transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
               </Link>
             </div>
@@ -82,7 +80,6 @@ function Hero() {
               transition={{ duration: 1, delay: 0.8 }}
               className="text-center tracking-tight max-w-xs sm:max-w-2xl mx-auto text-lg sm:text-xl md:text-2xl font-light text-zinc-800 px-2 leading-relaxed"
             >
-              Un objet perdu n'attend qu'une chose : être retrouvé. 
               <span className="block mt-1 text-zinc-600">Avec TLEFLI, nous transformons chaque perte en une retrouvaille réussie.</span>
             </motion.p>
           </motion.div>
