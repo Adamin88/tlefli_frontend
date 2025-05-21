@@ -156,7 +156,9 @@ const SecretAnswersSection = ({ item }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchAnswers = async () => {
+  const fetchAnswers = useCallback(async () => {
+    if (!item?._id) return; // Make sure item exists and has _id
+    
     try {
       console.log('Fetching answers for item:', item._id);
       const response = await itemsService.getSecretAnswers(item._id);
@@ -173,18 +175,21 @@ const SecretAnswersSection = ({ item }) => {
       setError('Failed to load secret answers');
       setLoading(false);
     }
-  };
+  }, [item?._id]); // Proper dependency
 
   useEffect(() => {
-    if (item.type === 'found' && item.secretQuestion) {
+    if (item?.type === 'found' && item?.secretQuestion) {
       console.log('Initial answers fetch for item:', item._id);
       fetchAnswers();
+    } else {
+      // Make sure loading is set to false when not fetching
+      setLoading(false);
     }
-  }, [item]);
+  }, [item, fetchAnswers]);
 
   // Set up polling for updates
   useEffect(() => {
-    if (item.type === 'found' && item.secretQuestion) {
+    if (item?.type === 'found' && item?.secretQuestion) {
       console.log('Setting up polling for item:', item._id);
       const interval = setInterval(() => {
         console.log('Polling for new answers...');
@@ -195,23 +200,25 @@ const SecretAnswersSection = ({ item }) => {
         clearInterval(interval);
       };
     }
-  }, [item]);
+    // No else branch needed here since this is cleanup
+  }, [item, fetchAnswers]);
 
   const handleVerifyAnswer = async (answerId, isCorrect) => {
+    if (!item?._id || !answerId) return; // Check for required values
+    
     try {
       await itemsService.verifySecretAnswer(item._id, answerId, isCorrect);
       
       // Refresh the answers list
       await fetchAnswers();
-
     } catch (err) {
-      console.error('Une erreur est survenue lors de la vérification');
+      console.error('Une erreur est survenue lors de la vérification', err);
     }
   };
 
   if (loading) return <div className="text-center py-4">Chargement des réponses...</div>;
   if (error) return <div className="text-red-600 py-4">{error}</div>;
-  if (!answers.length) return null;
+  if (!answers || !answers.length) return <div className="text-sm text-gray-500">Aucune réponse soumise</div>;
 
   return (
     <div className="mt-6 bg-white shadow sm:rounded-lg">
@@ -221,57 +228,59 @@ const SecretAnswersSection = ({ item }) => {
         </h3>
         <div className="mt-4 space-y-4">
           {answers.map((answer) => (
-            <div
-              key={answer._id}
-              className={`border rounded-lg p-4 ${
-                answer.verified
-                  ? answer.isCorrect
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200'
-                  : 'bg-gray-50 border-gray-200'
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm text-gray-600">
-                    Réponse de {answer.user?.name || `${answer.user?.firstName || ''} ${answer.user?.lastName || ''}`}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-gray-900">
-                    {answer.answer}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {new Date(answer.createdAt).toLocaleString()}
-                  </p>
-                </div>
-                {!answer.verified && (
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleVerifyAnswer(answer._id, true)}
-                      className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                    >
-                      Valider
-                    </button>
-                    <button
-                      onClick={() => handleVerifyAnswer(answer._id, false)}
-                      className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      Refuser
-                    </button>
+            answer && answer._id ? (
+              <div
+                key={answer._id}
+                className={`border rounded-lg p-4 ${
+                  answer.verified
+                    ? answer.isCorrect
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-red-50 border-red-200'
+                    : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      Réponse de {answer.user?.name || `${answer.user?.firstName || ''} ${answer.user?.lastName || ''}`}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {answer.answer || ''}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {answer.createdAt ? new Date(answer.createdAt).toLocaleString() : ''}
+                    </p>
                   </div>
-                )}
-                {answer.verified && (
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      answer.isCorrect
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {answer.isCorrect ? 'Validée' : 'Refusée'}
-                  </span>
-                )}
+                  {!answer.verified && (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleVerifyAnswer(answer._id, true)}
+                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      >
+                        Valider
+                      </button>
+                      <button
+                        onClick={() => handleVerifyAnswer(answer._id, false)}
+                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        Refuser
+                      </button>
+                    </div>
+                  )}
+                  {answer.verified && (
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        answer.isCorrect
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {answer.isCorrect ? 'Validée' : 'Refusée'}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : null
           ))}
         </div>
       </div>
@@ -362,6 +371,8 @@ export default function ItemDetails() {
   }, [item?.twin]);
 
   const handleVerifyAnswer = async (answerId, isCorrect) => {
+    if (!item?._id || !answerId) return; // Add validation
+    
     try {
       const response = await itemsService.verifySecretAnswer(item._id, answerId, isCorrect);
       
@@ -373,30 +384,22 @@ export default function ItemDetails() {
         }));
 
         // Refresh both items' data
-        const [foundItemResponse, lostItemResponse] = await Promise.all([
-          itemsService.getItemById(response.data.foundItem.id),
-          itemsService.getItemById(response.data.lostItem.id)
-        ]);
+        try {
+          const [foundItemResponse, lostItemResponse] = await Promise.all([
+            itemsService.getItemById(response.data.foundItem.id),
+            itemsService.getItemById(response.data.lostItem.id)
+          ]);
 
-        if (foundItemResponse.success) {
-          setItem(foundItemResponse.data);
+          if (foundItemResponse.success) {
+            setItem(foundItemResponse.data);
+          }
+        } catch (err) {
+          console.error('Error fetching updated items:', err);
         }
 
-        // Refresh the answers list
-        const fetchAnswers = async () => {
-          try {
-            console.log('Fetching answers for item:', item._id);
-            const response = await itemsService.getSecretAnswers(item._id);
-            console.log('Received answers:', {
-              count: response.answers?.length || 0,
-              answers: response.answers
-            });
-            setAnswers(response.answers);
-          } catch (err) {
-            console.error('Error fetching answers:', err);
-          }
-        };
-        await fetchAnswers();
+        // Don't call undefined functions
+        // Refresh item data instead of trying to access setAnswers
+        await fetchItemDetails();
       }
     } catch (error) {
       console.error('Error verifying answer:', error);
@@ -491,20 +494,46 @@ export default function ItemDetails() {
 
   // Replace the unused renderSecretAnswers function with a proper implementation
   const renderSecretAnswersSection = () => {
-    if (!item.secretAnswers || !item.secretAnswers.length) {
+    // Safely check if the item exists and has secretAnswers
+    if (!item || item.type !== 'found' || !Array.isArray(item.secretAnswers) || !item.secretAnswers.length || !currentUser) {
       return null;
     }
-
+    
+    // Check if currentUser is the reporter
+    let isReporter = false;
+    if (item.reportedBy) {
+      if (typeof item.reportedBy === 'object' && item.reportedBy._id) {
+        isReporter = currentUser.id?.toString() === item.reportedBy._id?.toString();
+      } else if (typeof item.reportedBy === 'string') {
+        isReporter = currentUser.id?.toString() === item.reportedBy?.toString();
+      }
+    }
+    
+    if (!isReporter) {
+      return null;
+    }
+    
     return (
-      <div className="space-y-4">
-        {item.secretAnswers.map((answer) => (
-          answer && <SecretAnswerVerification
-            key={answer._id}
-            answer={answer}
-            item={item}
-            onVerificationComplete={handleVerificationComplete}
-          />
-        ))}
+      <div className="mb-6">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <h2 className="font-medium text-gray-900">Réponses à la question secrète</h2>
+          </div>
+          <div className="p-4">
+            <div className="space-y-4">
+              {item.secretAnswers.map((answer) => (
+                answer && answer._id ? (
+                  <SecretAnswerVerification
+                    key={answer._id}
+                    answer={answer}
+                    item={item}
+                    onVerificationComplete={handleVerificationComplete}
+                  />
+                ) : null
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -1055,45 +1084,7 @@ export default function ItemDetails() {
       </div>
 
       {/* ROW 2: Secret Answer Verification */}
-      {(() => {
-        // Make sure all checks are for truthy values, not just undefined
-        if (!item || item.type !== 'found' || !item.secretAnswers || !item.secretAnswers.length || !currentUser) {
-          return null;
-        }
-        
-        // Check if currentUser is the reporter
-        const isReporter = item.reportedBy && (
-          typeof item.reportedBy === 'object' 
-            ? currentUser.id?.toString() === item.reportedBy._id?.toString() 
-            : currentUser.id?.toString() === item.reportedBy?.toString()
-        );
-        
-        if (!isReporter) {
-          return null;
-        }
-        
-        return (
-          <div className="mb-6">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="font-medium text-gray-900">Réponses à la question secrète</h2>
-              </div>
-              <div className="p-4">
-                <div className="space-y-4">
-                  {item.secretAnswers.map((answer) => (
-                    answer && <SecretAnswerVerification
-                      key={answer._id}
-                      answer={answer}
-                      item={item}
-                      onVerificationComplete={handleVerificationComplete}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {renderSecretAnswersSection()}
 
       {/* ROW 3: Matches Section */}
       <div className="mb-6">
@@ -1107,10 +1098,11 @@ export default function ItemDetails() {
             </div>
           </div>
           <div className="p-4">
+            {/* Ensure MatchesList gets valid props */}
             <MatchesList 
-              itemId={id} 
-              isTwinned={Boolean(item.twin)} // Ensure boolean value
-              twinnedItemId={item.twin?._id || null} // Ensure null if not present
+              itemId={id || ""} 
+              isTwinned={Boolean(item?.twin)} 
+              twinnedItemId={item?.twin?._id || null} 
               onMatchedItemStatusUpdate={handleMatchedItemsStatusUpdate} 
               onStatusUpdate={handleStatusUpdate} 
               onTwinItems={handleTwinItems} 
@@ -1148,8 +1140,8 @@ export default function ItemDetails() {
       {showFullQR && (
         <QRCodeModal
           value={`${baseUrl}/items/${item._id}`}
-          title={item.title}
-          reference={item.reference}
+          title={item?.title || ''}
+          reference={item?.reference || ''}
           onClose={() => setShowFullQR(false)}
         />
       )}
@@ -1161,6 +1153,9 @@ export default function ItemDetails() {
           onClose={() => setSelectedImage(null)}
         />
       )}
+
+      {/* Add the scanner button */}
+      <ScannerButton />
     </div>
   );
 }
