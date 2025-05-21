@@ -16,7 +16,7 @@ import {
   XMarkIcon,
   CheckCircleIcon,
   ArrowsPointingInIcon,
-  PrinterIcon, // Make sure PrinterIcon is imported here
+  PrinterIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon
@@ -208,6 +208,11 @@ const SecretAnswersSection = ({ item }) => {
       console.error('Une erreur est survenue lors de la vérification');
     }
   };
+
+  // Added return null for edge cases to prevent React error #130
+  if (!item || item.type !== 'found' || !item.secretQuestion) {
+    return null;
+  }
 
   if (loading) return <div className="text-center py-4">Chargement des réponses...</div>;
   if (error) return <div className="text-red-600 py-4">{error}</div>;
@@ -1065,27 +1070,32 @@ export default function ItemDetails() {
             : currentUser.id.toString() === item.reportedBy.toString()
         );
         
-        return isFoundItem && hasSecretAnswers && hasAnswersLength && hasCurrentUser && isReporter && (
-          <div className="mb-6">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="font-medium text-gray-900">Réponses à la question secrète</h2>
-              </div>
-              <div className="p-4">
-                <div className="space-y-4">
-                  {item.secretAnswers.map((answer) => (
-                    <SecretAnswerVerification
-                      key={answer._id}
-                      answer={answer}
-                      item={item}
-                      onVerificationComplete={handleVerificationComplete}
-                    />
-                  ))}
+        if (isFoundItem && hasSecretAnswers && hasAnswersLength && hasCurrentUser && isReporter) {
+          return (
+            <div className="mb-6">
+              <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="p-4 border-b border-gray-200">
+                  <h2 className="font-medium text-gray-900">Réponses à la question secrète</h2>
+                </div>
+                <div className="p-4">
+                  <div className="space-y-4">
+                    {item.secretAnswers.map((answer) => (
+                      <SecretAnswerVerification
+                        key={answer._id}
+                        answer={answer}
+                        item={item}
+                        onVerificationComplete={handleVerificationComplete}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
+          );
+        }
+        
+        // Important: Return null rather than undefined when not rendering
+        return null;
       })()}
 
       {/* ROW 3: Matches Section */}
@@ -1154,6 +1164,9 @@ export default function ItemDetails() {
           onClose={() => setSelectedImage(null)}
         />
       )}
+      
+      {/* Scanner Button - Always available */}
+      <ScannerButton />
     </div>
   );
 }
