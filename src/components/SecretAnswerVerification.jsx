@@ -41,8 +41,10 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
     }
   }, [answer, answers, selectedAnswerId]);
 
-  // Get the currently selected answer
-  const currentAnswer = activeAnswers.find(a => a._id === selectedAnswerId) || activeAnswers[0];
+  // Get the currently selected answer - add null check to avoid undefined
+  const currentAnswer = activeAnswers.length > 0 ? 
+    (activeAnswers.find(a => a._id === selectedAnswerId) || activeAnswers[0]) : 
+    null;
 
   // Group answers by verification status
   const groupedAnswers = {
@@ -180,6 +182,8 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
 
   // Render a single answer card in compact form
   const renderAnswerCard = (answer, isSelected) => {
+    if (!answer) return null; // Safety check for undefined answers
+    
     const statusColor = answer.verified 
       ? (answer.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200')
       : 'bg-yellow-50 border-yellow-200';
@@ -216,7 +220,7 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
 
   // Render a section with collapsible answers
   const renderSection = (title, answers, sectionKey, icon, bgColor) => {
-    if (!answers.length) return null;
+    if (!answers || !answers.length) return null;
     
     const isExpanded = expandedSections[sectionKey];
     
@@ -287,7 +291,7 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
         </div>
         
         {/* Right column - Selected answer details */}
-        {currentAnswer && (
+        {currentAnswer ? (
           <div className="col-span-1 md:col-span-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left Column: Original Secret Question & Answer */}
@@ -413,6 +417,13 @@ export default function SecretAnswerVerification({ answer, answers, item, onVeri
                 </div>
               </div>
             )}
+          </div>
+        ) : (
+          // Fallback if no current answer is selected
+          <div className="col-span-1 md:col-span-2 flex items-center justify-center bg-gray-50 rounded-lg p-8">
+            <p className="text-gray-500 text-center">
+              Sélectionnez une réponse pour voir les détails
+            </p>
           </div>
         )}
       </div>
