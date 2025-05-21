@@ -642,6 +642,135 @@ export default function ItemDetails() {
   }
 
   try {
+    const typeColors = {
+      lost: 'bg-red-100 text-red-800',
+      found: 'bg-green-100 text-green-800'
+    };
+
+    const statusColors = {
+      posted: 'bg-gray-100 text-gray-800',
+      authenticating: 'bg-yellow-100 text-yellow-800',
+      authenticated: 'bg-blue-100 text-blue-800',
+      returning: 'bg-purple-100 text-purple-800',
+      returned: 'bg-green-100 text-green-800'
+    };
+
+    const formatDate = (dateString) => {
+      return format(new Date(dateString), 'dd MMMM yyyy', { locale: fr });
+    };
+
+    // Get the base URL from the current location
+    const baseUrl = window.location.origin;
+    
+    // Add the category icon function inside the try block
+    const getCategoryIcon = (category) => {
+      if (!category || !CATEGORIES_CONFIG[category]) return null;
+      
+      const IconComponent = CATEGORIES_CONFIG[category].icon;
+      return IconComponent ? <IconComponent className="h-5 w-5 text-gray-600" /> : null;
+    };
+    
+    // Add the subcategory icon function inside the try block
+    const getSubcategoryIcon = (category, subcategory) => {
+      if (!category || !subcategory || !CATEGORIES_CONFIG[category]?.subcategories[subcategory]) {
+        return null;
+      }
+      
+      const IconComponent = CATEGORIES_CONFIG[category].subcategories[subcategory].icon;
+      return IconComponent ? <IconComponent className="h-5 w-5 text-gray-600 mr-2" /> : null;
+    };
+
+    // Define the QRCodeModal component here to ensure it has access to variables
+    const QRCodeModal = ({ value, title, reference, onClose }) => {
+      if (!value) return null;
+      
+      return (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          <div className="relative bg-white rounded-lg p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-500"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">{title || 'QR Code'}</h3>
+              {reference && <p className="text-sm text-gray-500 mb-4">Référence: {reference}</p>}
+              <div className="flex justify-center mb-4 QRCodeModal">
+                <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+                  <QRCodeGenerator 
+                    value={value}
+                    size={250}
+                    itemId={id}
+                    itemTitle={title}
+                    reference={reference}
+                    hideButtons={true}
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Ce code QR contient un lien direct vers les détails de cet objet.
+              </p>
+              <button
+                onClick={printQRCode}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <PrinterIcon className="h-4 w-4 mr-1.5" />
+                Imprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // Add the renderSecretAnswersSection function inside try block
+    const renderSecretAnswersSection = () => {
+      if (!item || item.type !== 'found' || !Array.isArray(item.secretAnswers) || !item.secretAnswers.length || !currentUser) {
+        return null;
+      }
+      
+      let isReporter = false;
+      if (item.reportedBy && currentUser?.id) {
+        if (typeof item.reportedBy === 'object' && item.reportedBy?._id) {
+          isReporter = currentUser.id.toString() === item.reportedBy._id.toString();
+        } else if (typeof item.reportedBy === 'string') {
+          isReporter = currentUser.id.toString() === item.reportedBy.toString();
+        }
+      }
+      
+      if (!isReporter) {
+        return null;
+      }
+      
+      return (
+        <div className="mb-6">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="font-medium text-gray-900">Réponses à la question secrète</h2>
+            </div>
+            <div className="p-4">
+              <div className="space-y-4">
+                {item.secretAnswers.map((answer) => (
+                  answer && answer._id ? (
+                    <SecretAnswerVerification
+                      key={answer._id}
+                      answer={answer}
+                      item={item}
+                      onVerificationComplete={handleVerificationComplete}
+                    />
+                  ) : null
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Navigation and Actions Bar */}
