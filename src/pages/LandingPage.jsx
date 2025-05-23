@@ -274,15 +274,14 @@ function Header({ isScrolled, activeSection, scrollToSection }) {
               key={section.id}
               onClick={() => scrollToSection(section.id)}
               className={`
-                group relative flex items-center gap-x-1 text-1xl font-semibold leading-6 transition-all duration-200 hover:bg-gray-100 hover:cursor-pointer rounded-lg px-2
+                group relative flex items-center gap-x-1 text-1xl leading-6 transition-all duration-200 hover:cursor-pointer px-2
                 ${activeSection === section.id
                   ? 'text-yellow-600'
-                  : 'text-cyan-900 hover:text-yellow-600'
+                  : 'text-stone-900 hover:text-yellow-600'
                 }
               `}
             >
-              <section.icon className={`h-5 w-5 transition-colors duration-200 ${activeSection === section.id ? 'text-yellow-600' : 'text-gray-400 group-hover:text-yellow-600'
-                }`} />
+              
               {section.name}
               {activeSection === section.id && (
                 <span className="absolute -bottom-2 left-0 h-0.5 w-full bg-yellow-600" />

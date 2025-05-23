@@ -2,129 +2,170 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-  ArrowRightIcon,
   BoltIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
+import heroImage from '../assets/herosection1.png';
 
 function Hero() {
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-64 h-64 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
-      </div>
-      
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col items-center justify-center min-h-screen py-12 gap-10 sm:gap-16">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center space-y-4 sm:space-y-6"
-          >
-            <div className="inline-block mb-4">
-              <span className="px-3 py-1 text-xs font-medium uppercase tracking-wider text-yellow-700 bg-yellow-100 rounded-full"></span>
-            </div>
-            
-            <h1 className="text-4xl font-extralight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl mb-2 sm:mb-4 leading-none">
-              <span className="relative">
-                <span className="block font-serif bg-gradient-to-r from-zinc-900 via-zinc-700 to-zinc-900 text-transparent bg-clip-text font-semibold">
-                  Déclarer votre objet
-                </span>
-                <motion.span 
-                  initial={{ width: "0%" }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 1, delay: 0.5, ease: "easeInOut" }}
-                  className="absolute -bottom-1 left-0 h-[1px] bg-yellow-600 opacity-50"
-                ></motion.span>
-                <span className="block bg-gradient-to-r from-zinc-900 via-zinc-700 to-zinc-900 text-transparent bg-clip-text mt-2 font-light">
-                  en 2 minutes
-                </span>
-              </span>
-            </h1>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-            className="flex flex-col items-center gap-8 sm:gap-10 w-full"
-          >
-            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-16 justify-center">
-              <Link
-                to="/report"
-                className="group relative inline-flex items-center gap-2 overflow-hidden"
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 rounded-xl opacity-90 group-hover:opacity-100 transition-opacity duration-300"></span>
-                <span className="relative z-10 rounded-xl px-8 py-3.5 text-sm font-medium text-white transition-all duration-500 sm:text-base text-center flex items-center">
-                  J'ai trouvé
-                </span>
-              </Link>
-              <Link
-                to="/report"
-                className="group relative inline-flex items-center gap-2 overflow-hidden"
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-500 rounded-xl opacity-90 group-hover:opacity-100 transition-opacity duration-300"></span>
-                <span className="relative z-10 rounded-xl px-8 py-3.5 text-sm font-medium text-white transition-all duration-500 sm:text-base text-center flex items-center">
-                  J'ai perdu
-                </span>
-              </Link>
-            </div>
-
-            <motion.p 
+    <>
+      <div className="relative min-h-[100svh] h-auto flex items-center justify-center overflow-hidden bg-white pt-16 pb-8 sm:pt-20 sm:pb-10 lg:py-10">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-64 h-64 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col lg:flex-row items-center justify-between h-full py-6 md:py-8 lg:py-12 gap-8 sm:gap-10 lg:gap-16">
+            {/* Content column - full width on mobile/tablet, half on desktop */}
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.8 }}
-              className="text-center tracking-tight max-w-xs sm:max-w-2xl mx-auto text-lg sm:text-xl md:text-2xl font-light text-zinc-800 px-2 leading-relaxed"
+              transition={{ duration: 0.8 }}
+              className="flex flex-col items-center lg:items-start max-w-2xl w-full lg:w-1/2 mt-10 sm:mt-8 lg:mt-0"
             >
-              <span className="block mt-1 text-zinc-600">Avec TLEFLI, nous transformons chaque perte en une retrouvaille réussie.</span>
-            </motion.p>
-          </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-center lg:text-left space-y-3 sm:space-y-4 lg:space-y-6"
+              >
+                <h1 className="mb-2 sm:mb-3 lg:mb-4 leading-none pt-10">
+                  <span className="relative">
+                    <span 
+                      className="block text-4xl sm:text-4xl md:text-5xl lg:text-7xl text-stone-700 font-extrabold"
+                    >
+                      Déclarer votre objet
+                    </span>
+                    <motion.span 
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 1, delay: 0.5, ease: "easeInOut" }}
+                      className="absolute -bottom-1 left-0 h-[1px] bg-yellow-600 opacity-70"
+                    ></motion.span>
+                    <span 
+                      className="block text-2xl sm:text-3xl md:text-4xl lg:text-6xl mt-2 sm:mt-3 font-light text-stone-700"
+                    >
+                      en 2 minutes
+                    </span>
+                  </span>
+                </h1>
+              
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1, delay: 0.6 }}
+                  className="tracking-tight max-w-xs sm:max-w-md mx-auto lg:mx-0 text-sm sm:text-base md:text-lg lg:text-xl font-normal text-stone-800 leading-relaxed"                >
+                  Avec TLEFLI, nous transformons chaque perte en une retrouvaille réussie.
+                </motion.p>
+              </motion.div>
 
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-6 px-2 sm:px-0">
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.0 }}
-              className="flex items-center space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-4 sm:px-6 py-2 sm:py-2.5 bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300"
-            >
-              <BoltIcon className="h-4 sm:h-5 w-4 sm:w-5 text-yellow-500" />
-              <span className="text-xs sm:text-sm text-zinc-800 font-medium">Correspondance Rapide</span>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                className="flex flex-col items-center lg:items-start gap-4 md:gap-6 w-full mt-10 sm:mt-12 md:mt-14"
+              >
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 md:gap-6 justify-center lg:justify-start w-full sm:w-auto">
+                  <Link
+                    to="/report"
+                    className="group relative inline-flex items-center gap-2 overflow-hidden w-40 sm:w-auto max-w-xs"
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-600 rounded-full  group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span 
+                      className="relative z-10 rounded-xl px-6 sm:px-3 py-2 sm:py-2 text-xl sm:text-2xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      J'ai trouvé
+                    </span>
+                  </Link>
+                  <Link
+                    to="/report"
+                    className="group relative inline-flex items-center gap-2 overflow-hidden w-40 sm:w-auto max-w-xs"
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span 
+                      className="relative z-10 rounded-xl px-6 sm:px-3 py-2 sm:py-2 text-xl sm:text-2xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      J'ai perdu
+                    </span>
+                  </Link>
+                </div>
+              </motion.div>
+
+              <div className="flex flex-wrap justify-center lg:justify-start gap-3 md:gap-4 px-2 sm:px-0 mt-10 sm:mt-12 md:mt-14 mb-6 sm:mb-8">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.0 }}
+                  className="flex items-center space-x-1 sm:space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 bg-white/90 shadow-sm hover:shadow-md transition-shadow duration-300"
+                >
+                  <BoltIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
+                  <span 
+                    className="text-xs md:text-sm text-zinc-800 font-medium"
+                    style={{ fontFamily: "'Inter', sans-serif" }}
+                  >
+                    Correspondance Rapide
+                  </span>
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.2 }}
+                  className="flex items-center space-x-1 sm:space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 bg-white/90 shadow-sm hover:shadow-md transition-shadow duration-300"
+                >
+                  <ShieldCheckIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
+                  <span 
+                    className="text-xs md:text-sm text-zinc-800 font-medium"
+                    style={{ fontFamily: "'Inter', sans-serif" }}
+                  >
+                    Plateforme Sécurisée
+                  </span>
+                </motion.div>
+              </div>
             </motion.div>
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.2 }}
-              className="flex items-center space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-4 sm:px-6 py-2 sm:py-2.5 bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300"
+            
+            {/* Right image column - shown ONLY on large (desktop) devices */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="hidden lg:block lg:w-1/2 relative h-full"
             >
-              <ShieldCheckIcon className="h-4 sm:h-5 w-4 sm:w-5 text-yellow-500" />
-              <span className="text-xs sm:text-sm text-zinc-800 font-medium">Plateforme Sécurisée</span>
+              <div className="relative w-full h-[450px] overflow-hidden">
+                <img 
+                  src={heroImage} 
+                  alt="TLEFLI Hero" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </motion.div>
+            
+            {/* Mobile scroll indicator - visible on small screens only */}
+            <motion.div 
+              className="absolute bottom-4 left-1/2 transform -translate-x-1/2 sm:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.8, 0] }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity,
+                repeatType: "loop" 
+              }}
+            >
+              <div className="flex flex-col items-center">
+                <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </motion.div>
           </div>
-          
-          {/* Mobile scroll indicator */}
-          <motion.div 
-            className="absolute bottom-6 left-1/2 transform -translate-x-1/2 sm:hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.8, 0] }}
-            transition={{ 
-              duration: 2, 
-              repeat: Infinity,
-              repeatType: "loop" 
-            }}
-          >
-            <div className="flex flex-col items-center">
-              <svg className="w-6 h-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </motion.div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
