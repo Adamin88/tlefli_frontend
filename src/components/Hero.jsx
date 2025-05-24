@@ -48,7 +48,7 @@ function Hero() {
                   </motion.div>
                   <span className="relative">
                     <span 
-                      className="block text-4xl sm:text-4xl md:text-5xl lg:text-7xl text-stone-700 font-extrabold pt-5"
+                      className="block text-4xl sm:text-4xl md:text-5xl lg:text-7xl text-stone-700 font-extrabold pt-2"
                     >
                       Déclarer votre objet
                     </span>
@@ -86,9 +86,9 @@ function Hero() {
                     to="/report"
                     className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-600 rounded-xl  group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-600 rounded-lg  group-hover:opacity-80 transition-opacity duration-300"></span>
                     <span 
-                      className="relative z-10 rounded-xl px-2 sm:px-2 py-1 sm:py-1 text-xl sm:text-xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
+                      className="relative z-10 rounded-xl px-2 sm:px-2 py-1.5 sm:py-1.5 text-xl sm:text-xl text-white transition-all duration-500 text-center flex items-center justify-center w-full"
                       style={{ fontFamily: "'Inter', sans-serif" }}
                     >
                       J'ai trouvé
@@ -98,9 +98,9 @@ function Hero() {
                     to="/report"
                     className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-600 rounded-xl group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-600 rounded-lg group-hover:opacity-80 transition-opacity duration-300"></span>
                     <span 
-                      className="relative z-10 rounded-xl px-2 sm:px-2 py-1 sm:py-1 text-xl sm:text-xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
+                      className="relative z-10 rounded-xl px-2 sm:px-2 py-1.5 sm:py-1.5 text-xl sm:text-xl text-white transition-all duration-500 text-center flex items-center justify-center w-full"
                       style={{ fontFamily: "'Inter', sans-serif" }}
                     >
                       J'ai perdu
