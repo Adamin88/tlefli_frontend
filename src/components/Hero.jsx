@@ -4,13 +4,14 @@ import { Link } from 'react-router-dom';
 import {
   BoltIcon,
   ShieldCheckIcon,
+  MapPinIcon,
 } from '@heroicons/react/24/outline';
 import heroImage from '../assets/herosection1.png';
 
 function Hero() {
   return (
     <>
-      <div className="relative min-h-[100svh] h-auto flex items-center justify-center overflow-hidden bg-white pt-16 pb-8 sm:pt-20 sm:pb-10 lg:py-10">
+      <div className="relative min-h-[100svh] h-auto flex items-center justify-center overflow-hidden bg-white pt-2 pb-2 sm:pt-2 sm:pb-10 lg:py-10">
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-64 h-64 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
@@ -33,10 +34,21 @@ function Hero() {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="text-center lg:text-left space-y-3 sm:space-y-4 lg:space-y-6"
               >
-                <h1 className="mb-2 sm:mb-3 lg:mb-4 leading-none pt-10">
+                <h1 className="mb-2 sm:mb-3 lg:mb-4 leading-none">
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="inline-flex items-center gap-2  px-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200/50 rounded-full shadow-sm"
+                  >
+                    
+                    <span className="text-sm font-semibold text-amber-700 tracking-wide">
+                      Solution #1 au Maroc
+                    </span>
+                  </motion.div>
                   <span className="relative">
                     <span 
-                      className="block text-4xl sm:text-4xl md:text-5xl lg:text-7xl text-stone-700 font-extrabold"
+                      className="block text-4xl sm:text-4xl md:text-5xl lg:text-7xl text-stone-700 font-extrabold pt-5"
                     >
                       Déclarer votre objet
                     </span>
@@ -72,11 +84,11 @@ function Hero() {
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 md:gap-6 justify-center lg:justify-start w-full sm:w-auto">
                   <Link
                     to="/report"
-                    className="group relative inline-flex items-center gap-2 overflow-hidden w-40 sm:w-auto max-w-xs"
+                    className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-600 rounded-full  group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-600 rounded-xl  group-hover:opacity-80 transition-opacity duration-300"></span>
                     <span 
-                      className="relative z-10 rounded-xl px-6 sm:px-3 py-2 sm:py-2 text-xl sm:text-2xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
+                      className="relative z-10 rounded-xl px-2 sm:px-2 py-1 sm:py-1 text-xl sm:text-xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
                       style={{ fontFamily: "'Inter', sans-serif" }}
                     >
                       J'ai trouvé
@@ -84,11 +96,11 @@ function Hero() {
                   </Link>
                   <Link
                     to="/report"
-                    className="group relative inline-flex items-center gap-2 overflow-hidden w-40 sm:w-auto max-w-xs"
+                    className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-600 rounded-xl group-hover:opacity-80 transition-opacity duration-300"></span>
                     <span 
-                      className="relative z-10 rounded-xl px-6 sm:px-3 py-2 sm:py-2 text-xl sm:text-2xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
+                      className="relative z-10 rounded-xl px-2 sm:px-2 py-1 sm:py-1 text-xl sm:text-xl font-bold text-white transition-all duration-500 text-center flex items-center justify-center w-full"
                       style={{ fontFamily: "'Inter', sans-serif" }}
                     >
                       J'ai perdu
@@ -97,12 +109,12 @@ function Hero() {
                 </div>
               </motion.div>
 
-              <div className="flex flex-wrap justify-center lg:justify-start gap-3 md:gap-4 px-2 sm:px-0 mt-10 sm:mt-12 md:mt-14 mb-6 sm:mb-8">
+              <div className="flex flex-wrap justify-center lg:justify-start lg:flex-nowrap gap-3 md:gap-4 px-2 sm:px-0 mt-10 sm:mt-12 md:mt-14 mb-6 sm:mb-8">
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 1.0 }}
-                  className="flex items-center space-x-1 sm:space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 bg-white/90 shadow-sm hover:shadow-md transition-shadow duration-300"
+                  className="flex items-center text-center space-x-1 sm:space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-2 py-1 bg-white/90 shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <BoltIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
                   <span 
@@ -116,7 +128,7 @@ function Hero() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 1.2 }}
-                  className="flex items-center space-x-1 sm:space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 bg-white/90 shadow-sm hover:shadow-md transition-shadow duration-300"
+                  className="flex items-center text-center space-x-1 sm:space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-2 py-1 bg-white/90 shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   <ShieldCheckIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
                   <span 
@@ -124,6 +136,20 @@ function Hero() {
                     style={{ fontFamily: "'Inter', sans-serif" }}
                   >
                     Plateforme Sécurisée
+                  </span>
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.4 }}
+                  className="flex items-center text-center space-x-1 sm:space-x-2 border-[0.5px] border-zinc-800/30 rounded-full px-2 py-1 sm:py-2 md:py-2.5 bg-white/90 shadow-sm hover:shadow-md transition-shadow duration-300"
+                >
+                  <MapPinIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
+                  <span 
+                    className="text-xs md:text-sm text-zinc-800 font-medium"
+                    style={{ fontFamily: "'Inter', sans-serif" }}
+                  >
+                    Géolocalisation Précise
                   </span>
                 </motion.div>
               </div>
