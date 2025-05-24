@@ -83,7 +83,7 @@ function Hero() {
               >
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 md:gap-6 justify-center lg:justify-start w-full sm:w-auto">
                   <Link
-                    to="/report"
+                    to="/login"
                     className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
                     <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-600 rounded-lg  group-hover:opacity-80 transition-opacity duration-300"></span>
@@ -95,7 +95,7 @@ function Hero() {
                     </span>
                   </Link>
                   <Link
-                    to="/report"
+                    to="/login"
                     className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
                     <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-600 rounded-lg group-hover:opacity-80 transition-opacity duration-300"></span>
