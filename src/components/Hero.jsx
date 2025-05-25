@@ -86,10 +86,10 @@ function Hero() {
                     to="/login"
                     className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-600 rounded-lg  group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 rounded-lg  group-hover:opacity-80 transition-opacity duration-300"></span>
                     <span 
                       className="relative z-10 rounded-xl px-2 sm:px-2 py-1.5 sm:py-1.5 text-xl sm:text-xl text-white transition-all duration-500 text-center flex items-center justify-center w-full"
-                      style={{ fontFamily: "'Inter', sans-serif" }}
+                      
                     >
                       J'ai trouvé
                     </span>
@@ -98,10 +98,10 @@ function Hero() {
                     to="/login"
                     className="group relative inline-flex items-center gap-2 overflow-hidden w-32 sm:w-32"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-600 rounded-lg group-hover:opacity-80 transition-opacity duration-300"></span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg group-hover:opacity-80 transition-opacity duration-300"></span>
                     <span 
                       className="relative z-10 rounded-xl px-2 sm:px-2 py-1.5 sm:py-1.5 text-xl sm:text-xl text-white transition-all duration-500 text-center flex items-center justify-center w-full"
-                      style={{ fontFamily: "'Inter', sans-serif" }}
+                      
                     >
                       J'ai perdu
                     </span>
@@ -119,7 +119,7 @@ function Hero() {
                   <BoltIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
                   <span 
                     className="text-xs md:text-sm text-zinc-800 font-medium"
-                    style={{ fontFamily: "'Inter', sans-serif" }}
+                    
                   >
                     Correspondance Rapide
                   </span>
@@ -133,7 +133,7 @@ function Hero() {
                   <ShieldCheckIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
                   <span 
                     className="text-xs md:text-sm text-zinc-800 font-medium"
-                    style={{ fontFamily: "'Inter', sans-serif" }}
+                    
                   >
                     Plateforme Sécurisée
                   </span>
@@ -147,7 +147,7 @@ function Hero() {
                   <MapPinIcon className="h-3 sm:h-4 md:h-5 w-3 sm:w-4 md:w-5 text-yellow-500" />
                   <span 
                     className="text-xs md:text-sm text-zinc-800 font-medium"
-                    style={{ fontFamily: "'Inter', sans-serif" }}
+                    
                   >
                     Géolocalisation Précise
                   </span>
