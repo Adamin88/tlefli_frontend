@@ -42,14 +42,22 @@ const PaymentButton = ({ itemId, amount, currency, onSuccess }) => {
   const loadPayPalScript = () => {
     console.log('Loading PayPal script with client ID:', import.meta.env.VITE_PAYPAL_CLIENT_ID);
     
-    loadScript({
+    // Determine environment based on URL or environment variable
+    const isProduction = window.location.hostname === 'tlefli.ma' || 
+                        import.meta.env.VITE_ENVIRONMENT === 'production';
+    
+    const scriptConfig = {
       "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID,
       currency: currency || "EUR",
       components: "buttons,marks",
       "enable-funding": "card",
-      "disable-funding": "paylater,venmo,sepa,bancontact", 
-      debug: false
-    })
+      "disable-funding": "paylater,venmo,sepa,bancontact",
+      debug: !isProduction // Enable debug only in non-production
+    };
+    
+    console.log(`Loading PayPal script for ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} environment`);
+    
+    loadScript(scriptConfig)
     .then(paypal => {
       if (isMounted.current) {
         console.log('PayPal script loaded successfully');
@@ -153,9 +161,17 @@ const PaymentButton = ({ itemId, amount, currency, onSuccess }) => {
             
             // Check if user is authenticated
             const token = authService.getToken();
+            const isProduction = window.location.hostname === 'tlefli.ma' || 
+                               import.meta.env.VITE_ENVIRONMENT === 'production';
+            
             if (!token) {
               console.warn('User is not authenticated for payment');
-              // We continue anyway as backend might allow payment in development mode
+              if (isProduction) {
+                const errorMsg = 'Authentification requise pour effectuer un paiement';
+                toast.error(errorMsg);
+                throw new Error(errorMsg);
+              }
+              // In development, we continue anyway as backend might allow payment
             }
             
             const currentUrl = window.location.href;

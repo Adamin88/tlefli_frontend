@@ -10,6 +10,7 @@ import {
 import BaseMatchCard from './BaseMatchCard';
 import itemsService from '../services/itemsService';
 import PaymentButton from './PaymentButton';
+import TwinTimer from './TwinTimer';
 import toast from './Toast/index';
 
 const FoundItemMatchCard = ({
@@ -20,7 +21,8 @@ const FoundItemMatchCard = ({
   onNotificationRefresh,
   sourceItemId,
   isSourceItem = false,
-  onVerificationComplete
+  onVerificationComplete,
+  onDataRefresh // New prop for refreshing parent component data
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [secretAnswer, setSecretAnswer] = useState('');
@@ -47,6 +49,70 @@ const FoundItemMatchCard = ({
   const [isLoadingPaymentStatus, setIsLoadingPaymentStatus] = useState(false);
   const [showPaymentButton, setShowPaymentButton] = useState(false);
   const [distance, setDistance] = useState(null);
+  const [timerExpiredMessage, setTimerExpiredMessage] = useState(null);
+  const [isRefreshingItem, setIsRefreshingItem] = useState(false);
+
+  // Handler for when the timer expires
+  const handleTimerExpired = useCallback(async () => {
+    console.log('Timer expired, refreshing component state and parent data');
+    
+    // Set expiration message
+    setTimerExpiredMessage('Le temps pour soumettre une réponse a expiré. Les objets ont été automatiquement dé-jumelés.');
+    
+    // Update local state to reflect that items are no longer twinned
+    setJustTwinned(false);
+    setPersistentTwinState(false);
+    setPermanentShowForm(false);
+    setForceShowQuestionForm(false);
+    setFormShownAfterTwin(false);
+    
+    // Reset any answer-related states
+    setAnswerStatus(null);
+    setSecretAnswer('');
+    setShowSecretQuestion(false);
+    
+    // Fetch updated item status from server
+    setIsRefreshingItem(true);
+    try {
+      // Get updated item details to ensure we have the latest status
+      const response = await itemsService.getItemById(match.item._id);
+      if (response.success) {
+        // Update the match object with fresh data
+        match.item = response.data;
+        console.log('Item refreshed after timer expiration:', response.data);
+      }
+    } catch (error) {
+      console.error('Error refreshing item after timer expiration:', error);
+    } finally {
+      setIsRefreshingItem(false);
+    }
+    
+    // Force a re-render
+    setForceRender(prev => prev + 1);
+    
+    // Optionally refresh the parent component
+    if (onMatchedItemStatusUpdate) {
+      onMatchedItemStatusUpdate(match.item._id, 'posted');
+    }
+    
+    // Call the data refresh callback to update parent components
+    if (onDataRefresh) {
+      console.log('Calling parent data refresh after timer expiration');
+      try {
+        await onDataRefresh();
+      } catch (error) {
+        console.error('Error refreshing parent data:', error);
+      }
+    }
+    
+    // Trigger BaseMatchCard refresh by incrementing forceRender
+    setForceRender(prev => prev + 1);
+    
+    // Auto-hide the message after 10 seconds
+    setTimeout(() => {
+      setTimerExpiredMessage(null);
+    }, 10000);
+  }, [match.item._id, onMatchedItemStatusUpdate, onDataRefresh]);
 
   // Add this utility function to get a valid userID
   const getValidUserId = (currentUser, match) => {
@@ -1093,12 +1159,47 @@ const renderAnswerStatus = () => {
     );
   };
 
+  // Function to render timer expiration message
+  const renderTimerExpiredMessage = () => {
+    if (!timerExpiredMessage) return null;
+
+    return (
+      <div className="mt-4 bg-orange-50 p-4 rounded-md border border-orange-300">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <ClockIcon className="h-5 w-5 text-orange-500" />
+          </div>
+          <div className="ml-3 flex-1">
+            <h3 className="text-sm font-medium text-orange-800">Temps écoulé</h3>
+            <div className="mt-2 text-sm text-orange-700">
+              <p>{timerExpiredMessage}</p>
+              {isRefreshingItem && (
+                <p className="mt-1 text-xs italic">Actualisation en cours...</p>
+              )}
+            </div>
+          </div>
+          <div className="ml-3 flex-shrink-0">
+            <button
+              onClick={() => setTimerExpiredMessage(null)}
+              className="inline-flex items-center p-1 border border-transparent rounded-full text-orange-500 hover:text-orange-700 focus:outline-none"
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Modified renderSecretQuestionContent to ensure the correct element is displayed and pending answers take priority
 const renderSecretQuestionContent = () => {
   // Only show for found items where current user is not the reporter
   if (match.item.reportedBy?._id === currentUser?._id) {
     return null;
   }
+
+  // Show timer expiration message if it exists
+  const timerExpiredUI = renderTimerExpiredMessage();
 
   // CRITICAL FIX: Check for pending answers at the very beginning of the function
   const hasPendingAnswer = match.item.secretAnswers?.some(answer => 
@@ -1110,6 +1211,7 @@ const renderSecretQuestionContent = () => {
     console.log('Rendering pending answer status with HIGHEST priority');
     return (
       <>
+        {timerExpiredUI}
         {renderAnswerStatus()}
         {userAnswers.length > 0 && renderAnswerHistory()}
       </>
@@ -1128,6 +1230,7 @@ const renderSecretQuestionContent = () => {
     if (canUserClaim) {
       return (
         <>
+          {timerExpiredUI}
           {answerStatus === 'correct' ? renderAnswerStatus() : (
             <div className="mt-4 bg-green-50 p-4 rounded-md border border-green-300">
               <div className="flex">
@@ -1158,6 +1261,7 @@ const renderSecretQuestionContent = () => {
     // Original return for authenticated items when user can't claim
     return (
       <>
+        {timerExpiredUI}
         {answerStatus === 'correct' ? renderAnswerStatus() : (
           <div className="mt-4 bg-green-50 p-4 rounded-md border border-green-300">
             <div className="flex">
@@ -1186,6 +1290,7 @@ const renderSecretQuestionContent = () => {
   if (shouldShowSecretQuestionForm) {
     return (
       <div className="mt-4">
+        {timerExpiredUI}
         <div className="bg-blue-50 p-4 rounded-md border border-blue-300 mb-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -1213,6 +1318,15 @@ const renderSecretQuestionContent = () => {
           </div>
         </div>
         
+        {/* Add timer display when items are twinned */}
+        {isTwinned && (
+          <TwinTimer 
+            itemId={match.item._id}
+            onTimerExpired={handleTimerExpired}
+            isVisible={true}
+          />
+        )}
+        
         {/* Only show incorrect status, never both incorrect and pending */}
         {answerStatus === 'incorrect' && renderAnswerStatus()}
         
@@ -1231,6 +1345,16 @@ const renderSecretQuestionContent = () => {
   // Default case with better status handling
   return (
     <>
+      {timerExpiredUI}
+      {/* Add timer display for twinned items in default case */}
+      {isTwinned && (
+        <TwinTimer 
+          itemId={match.item._id}
+          onTimerExpired={handleTimerExpired}
+          isVisible={true}
+        />
+      )}
+      
       {/* First show any important status UI */}
       {answerStatus && renderAnswerStatus()}
       
@@ -1443,7 +1567,7 @@ const renderSecretQuestionForm = () => {
               Jumelage...
             </>
           ) : (
-            'Jumeler cet objet'
+            `C'est mon objet`
           )}
         </button>
       )}
@@ -1465,7 +1589,7 @@ const renderSecretQuestionForm = () => {
               Annulation...
             </>
           ) : (
-            'Annuler le jumelage'
+            `Ce n'est plus mon objet`
           )}
         </button>
       )}
@@ -1634,6 +1758,7 @@ const renderSecretQuestionForm = () => {
       forceRender={forceRender}
       renderActionButtons={renderActionButtons}
       renderHeaderExtras={renderHeaderExtras}
+      onDataRefresh={onDataRefresh}
     >
       {renderSecretQuestionContent()}
     </BaseMatchCard>

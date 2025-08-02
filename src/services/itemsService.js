@@ -625,6 +625,24 @@ class ItemsService {
     }
   }
 
+  async getTimerInfo(itemId) {
+    try {
+      console.log('ItemsService: Getting timer info for item:', itemId);
+      const response = await api.get(`/items/${itemId}/timer`);
+      
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('ItemsService: Timer info error:', error.response || error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to get timer info'
+      };
+    }
+  }
+
   async createNotification(notificationData) {
     try {
       console.log('Creating notification:', notificationData);

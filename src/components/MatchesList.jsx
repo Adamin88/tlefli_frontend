@@ -4,6 +4,7 @@ import itemsService from '../services/itemsService';
 import FoundItemMatchCard from './FoundItemMatchCard';
 import LostItemMatchCard from './LostItemMatchCard';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationsContext';
 
 const MatchesList = ({ 
   itemId, 
@@ -14,6 +15,7 @@ const MatchesList = ({
   onVerificationComplete 
 }) => {
   const { user: currentUser, loading: authLoading } = useAuth(); // Get loading state from auth context
+  const { fetchNotifications } = useNotifications(); // Get notification refresh function
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -211,6 +213,17 @@ const MatchesList = ({
     }
   }, [itemId, userId, currentUser, isUpdatingStorage, twinnedItemIds]);
 
+  // Add a data refresh callback for timer expiration
+  const handleDataRefresh = useCallback(async () => {
+    console.log('MatchesList: Refreshing data due to timer expiration');
+    try {
+      await fetchMatches();
+      console.log('MatchesList: Data refreshed successfully');
+    } catch (error) {
+      console.error('MatchesList: Error refreshing data:', error);
+    }
+  }, [fetchMatches]);
+
   // Add a more robust filtering function with improved visibility rules
   const applyEnhancedFilteringWithNullCheck = (matchesArray) => {
     if (!matchesArray || !matchesArray.length) return [];
@@ -367,7 +380,9 @@ const MatchesList = ({
   // Function to refresh notifications after an action
   const refreshNotifications = async () => {
     try {
-      // Placeholder for notification refresh logic
+      if (fetchNotifications) {
+        await fetchNotifications();
+      }
       return { success: true };
     } catch (error) {
       console.error('Error refreshing notifications:', error);
@@ -428,6 +443,7 @@ const MatchesList = ({
             sourceItemId={itemId}
             isSourceItem={match.item._id === itemId}
             onVerificationComplete={handleVerificationComplete}
+            onDataRefresh={handleDataRefresh}
           />
         ) : (
           <LostItemMatchCard
@@ -440,6 +456,7 @@ const MatchesList = ({
             sourceItemId={itemId}
             isSourceItem={match.item._id === itemId}
             onVerificationComplete={handleVerificationComplete}
+            onDataRefresh={handleDataRefresh}
           />
         );
       })}

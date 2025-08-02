@@ -7,10 +7,13 @@ import {
   ExclamationTriangleIcon,
   HomeIcon,
   CheckCircleIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  EnvelopeIcon,
+  LockClosedIcon
 } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
 
 const userTypes = [
   {
@@ -37,9 +40,34 @@ export default function Register() {
   const [selected, setSelected] = useState(userTypes[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [adBlockerDetected, setAdBlockerDetected] = useState(false);
   const [searchParams] = useSearchParams();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  
+  // Email registration states
+  const [emailFormData, setEmailFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+
+  // Add OTP verification states
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [emailVerificationData, setEmailVerificationData] = useState({
+    otp: '',
+    userId: '',
+    email: ''
+  });
+  const [isVerifyingEmailOTP, setIsVerifyingEmailOTP] = useState(false);
+  const [canResendEmailOTP, setCanResendEmailOTP] = useState(false);
+  const [emailResendTimer, setEmailResendTimer] = useState(60);
+  const [emailOtpValidation, setEmailOtpValidation] = useState({
+    isValid: false,
+    isInvalid: false,
+    showSuccess: false
+  });
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -143,680 +171,686 @@ export default function Register() {
     } finally {
       setIsLoading(false);
     }
-  }, [selected.id, adBlockerDetected]);
+  }, [selected.id]);
 
-  // Enhanced animation variants for step transitions - modified to not interfere with logo
-  const stepTransition = {
-    hidden: { opacity: 0, x: 50, position: 'absolute' },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      position: 'relative',
-      transition: { 
-        type: 'spring',
-        stiffness: 300,
-        damping: 30,
-        duration: 0.4
-      } 
-    },
-    exit: { 
-      opacity: 0, 
-      x: -50, 
-      position: 'absolute',
-      transition: { 
-        ease: 'easeInOut',
-        duration: 0.3
-      } 
+  // Password strength calculation
+  const calculatePasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
+
+  // Handle email form changes
+  const handleEmailFormChange = (e) => {
+    const { name, value } = e.target;
+    setEmailFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
     }
   };
 
-  // Helper function to handle step progression with enhanced animation
-  const goToNextStep = () => {
-    // Only proceed if a user type is selected
-    if (selected) {
-      // Create visual indication that we're progressing
-      const progressIndicator = document.getElementById('step-progress');
-      if (progressIndicator) {
-        progressIndicator.classList.add('animate-pulse');
-        setTimeout(() => {
-          setCurrentStep(2);
-          setTimeout(() => {
-            progressIndicator.classList.remove('animate-pulse');
-          }, 500);
-        }, 300);
-      } else {
-        setCurrentStep(2);
-      }
+  // Enhanced OTP input with real-time validation for email verification
+  const handleEmailOTPChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setEmailVerificationData(prev => ({ ...prev, otp: value }));
+    
+    // Real-time validation
+    if (value.length === 6) {
+      setEmailOtpValidation({
+        isValid: true,
+        isInvalid: false,
+        showSuccess: false
+      });
+    } else if (value.length > 0) {
+      setEmailOtpValidation({
+        isValid: false,
+        isInvalid: false,
+        showSuccess: false
+      });
     } else {
-      toast.error("Veuillez sélectionner un type de compte pour continuer");
+      setEmailOtpValidation({
+        isValid: false,
+        isInvalid: false,
+        showSuccess: false
+      });
     }
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        delayChildren: 0.3,
-        staggerChildren: 0.2
+  // Handle email verification OTP
+  const handleEmailVerification = async (e) => {
+    e.preventDefault();
+    setIsVerifyingEmailOTP(true);
+    setError('');
+
+    try {
+      if (!emailVerificationData.otp || emailVerificationData.otp.length !== 6) {
+        throw new Error('Veuillez entrer un code OTP valide de 6 chiffres');
       }
+
+      if (!emailVerificationData.userId) {
+        throw new Error('Erreur: ID utilisateur manquant. Veuillez recommencer l\'inscription.');
+      }
+
+      const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+      const cleanBaseUrl = apiBaseUrl.endsWith('/') 
+        ? apiBaseUrl.slice(0, -1) 
+        : apiBaseUrl;
+
+      // Debug logging
+      console.log('Verification data:', {
+        userId: emailVerificationData.userId,
+        otp: emailVerificationData.otp,
+        email: emailVerificationData.email
+      });
+
+      const response = await fetch(`${cleanBaseUrl}/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: emailVerificationData.userId,
+          otp: emailVerificationData.otp
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Verification response:', data);
+
+      if (data.success) {
+        setEmailOtpValidation({
+          isValid: true,
+          isInvalid: false,
+          showSuccess: true
+        });
+        
+        toast.success('Email vérifié avec succès !');
+        
+        // Navigate to profile completion after successful verification
+        setTimeout(() => {
+          if (selected.id === 'business') {
+            navigate('/complete-business-profile');
+          } else {
+            navigate('/complete-profile');
+          }
+        }, 1000);
+      } else {
+        setEmailOtpValidation({
+          isValid: false,
+          isInvalid: true,
+          showSuccess: false
+        });
+        throw new Error(data.message || 'Code OTP invalide');
+      }
+    } catch (error) {
+      console.error('Email verification error:', error);
+      setError(error.message);
+      setEmailOtpValidation({
+        isValid: false,
+        isInvalid: true,
+        showSuccess: false
+      });
+      toast.error(error.message);
+    } finally {
+      setIsVerifyingEmailOTP(false);
     }
   };
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
+  // Resend email verification OTP
+  const handleResendEmailVerification = async () => {
+    try {
+      if (!emailVerificationData.userId) {
+        throw new Error('Erreur: ID utilisateur manquant. Veuillez recommencer l\'inscription.');
+      }
+
+      const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+      const cleanBaseUrl = apiBaseUrl.endsWith('/') 
+        ? apiBaseUrl.slice(0, -1) 
+        : apiBaseUrl;
+
+      console.log('Resending OTP for userId:', emailVerificationData.userId);
+
+      const response = await fetch(`${cleanBaseUrl}/auth/resend-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: emailVerificationData.userId
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Resend response:', data);
+
+      if (data.success) {
+        toast.success('Code de vérification renvoyé !');
+        setCanResendEmailOTP(false);
+        startEmailResendTimer();
+      } else {
+        throw new Error(data.message || 'Erreur lors du renvoi du code');
+      }
+    } catch (error) {
+      console.error('Resend email verification error:', error);
+      toast.error(error.message);
+    }
   };
 
-  // New animation for the page transitions
-  const pageTransition = {
-    type: "tween",
-    ease: "anticipate",
-    duration: 0.5
+  // Timer for resend email OTP
+  const startEmailResendTimer = () => {
+    setEmailResendTimer(60);
+    const timer = setInterval(() => {
+      setEmailResendTimer((prevTimer) => {
+        if (prevTimer <= 1) {
+          clearInterval(timer);
+          setCanResendEmailOTP(true);
+          return 0;
+        }
+        return prevTimer - 1;
+      });
+    }, 1000);
   };
 
-  // Hover animation for cards
-  const cardHover = {
-    scale: 1.03,
-    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-    transition: { duration: 0.3 }
-  };
+  // Email registration
+  const handleEmailRegistration = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
-  // Add new animation constants
-  const progressVariants = {
-    inactive: { scale: 0.9, opacity: 0.5 },
-    active: { 
-      scale: 1, 
-      opacity: 1,
-      transition: { type: "spring", stiffness: 300, damping: 20 }
-    },
-    completed: { 
-      scale: 1, 
-      opacity: 1,
-      transition: { type: "spring", stiffness: 300, damping: 20 }
+    try {
+      // Validation
+      if (!emailFormData.email || !emailFormData.password || !emailFormData.confirmPassword) {
+        throw new Error('Veuillez remplir tous les champs');
+      }
+
+      if (emailFormData.password !== emailFormData.confirmPassword) {
+        throw new Error('Les mots de passe ne correspondent pas');
+      }
+
+      if (emailFormData.password.length < 8) {
+        throw new Error('Le mot de passe doit contenir au moins 8 caractères');
+      }
+
+      // Use the same API base URL logic as Google auth
+      const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+      const cleanBaseUrl = apiBaseUrl.endsWith('/') 
+        ? apiBaseUrl.slice(0, -1) 
+        : apiBaseUrl;
+
+      const response = await fetch(`${cleanBaseUrl}/auth/register-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailFormData.email,
+          password: emailFormData.password,
+          userType: selected.id
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Registration response:', data);
+      console.log('Response structure:', {
+        success: data.success,
+        hasData: !!data.data,
+        dataKeys: data.data ? Object.keys(data.data) : 'no data object',
+        directUserId: data.userId,
+        nestedUserId: data.data?.userId
+      });
+
+      if (data.success) {
+        // Show success message for registration
+        toast.success('Inscription réussie ! Vérifiez votre email.');
+        
+        // Extract userId from nested data object (backend returns data.data.userId)
+        const userId = data.data?.userId || data.userId;
+        if (!userId) {
+          console.error('Backend response:', data);
+          throw new Error('Erreur: Aucun ID utilisateur reçu du serveur');
+        }
+        
+        // Set up email verification data
+        setEmailVerificationData({
+          otp: '',
+          userId: userId,
+          email: emailFormData.email
+        });
+        
+        console.log('Email verification data set:', {
+          userId: userId,
+          email: emailFormData.email
+        });
+        
+        // Hide the registration form and show OTP verification
+        setShowEmailForm(false);
+        setShowEmailVerification(true);
+        
+        // Start the resend timer
+        startEmailResendTimer();
+      } else {
+        throw new Error(data.message || 'Erreur lors de l\'inscription');
+      }
+    } catch (error) {
+      console.error('Email registration error:', error);
+      setError(error.message);
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-5xl w-full h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] max-h-[900px] bg-white shadow-2xl rounded-2xl sm:rounded-3xl flex flex-col md:flex-row overflow-hidden relative"
+    <div className="h-screen bg-gradient-to-br from-yellow-50 to-yellow-100 flex items-center justify-center p-4 overflow-hidden">
+      {/* Home Button */}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 z-10 bg-white hover:bg-yellow-50 p-2 rounded-full 
+                 transition-all duration-300 ease-in-out flex items-center justify-center 
+                 shadow-md hover:shadow-lg text-yellow-600"
       >
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-yellow-300 z-10"></div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 to-yellow-400 z-10"></div>
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-yellow-200 rounded-full opacity-20 blur-xl"></div>
-        <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-yellow-300 rounded-full opacity-20 blur-xl"></div>
-        <div className="absolute top-1/4 right-10 w-20 h-20 bg-blue-100 rounded-full opacity-10 blur-xl"></div>
-        <div className="absolute bottom-1/3 left-10 w-16 h-16 bg-red-100 rounded-full opacity-10 blur-xl"></div>
+        <HomeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+        <span className="sr-only">Accueil</span>
+      </Link>
+
+      <div className="max-w-md w-full h-[calc(100vh-2rem)] max-h-[700px] bg-white shadow-2xl rounded-3xl overflow-hidden flex flex-col">
+        {/* Decorative top banner */}
+        <div className="h-3 bg-gradient-to-r from-yellow-400 to-yellow-300 flex-shrink-0"></div>
         
-        {/* Home Button */}
-        <Link
-          to="/"
-          className="absolute top-3 sm:top-4 left-3 sm:left-4 z-20 bg-white hover:bg-yellow-50 p-1.5 sm:p-2 rounded-full 
-                  transition-all duration-300 ease-in-out flex items-center justify-center 
-                  shadow-md hover:shadow-lg text-yellow-600 border border-transparent hover:border-yellow-200"
-        >
-          <HomeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-          <span className="sr-only">Accueil</span>
-        </Link>
-
-        {/* Progress Steps Indicator - Made smaller on mobile */}
-        <div className="absolute top-3 sm:top-6 left-0 right-0 z-20 mx-auto flex justify-center pointer-events-none">
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg p-2 sm:p-3 border border-yellow-100 pointer-events-auto"
-            style={{ width: 'min(90%, 280px)' }}
-            id="step-progress"
-          >
-            <div className="flex justify-between items-center relative">
-              {/* Progress Line */}
-              <div className="absolute h-0.5 inset-x-0 top-1/2 transform -translate-y-1/2 bg-gray-200"></div>
-              <motion.div 
-                initial={{ width: "0%" }}
-                animate={{ width: currentStep >= 2 ? "100%" : "0%" }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="absolute h-0.5 sm:h-1 inset-x-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-yellow-500 to-yellow-300 rounded-full z-0"
-              ></motion.div>
-              
-              {/* Step 1 */}
-              <div className="relative z-10 flex flex-col items-center px-2">
-                <motion.div 
-                  variants={progressVariants}
-                  initial="inactive"
-                  animate={currentStep >= 1 ? "completed" : "inactive"}
-                  whileHover={{ scale: 1.05 }}
-                  className={`flex items-center justify-center h-7 w-7 sm:h-10 sm:w-10 rounded-full 
-                    ${currentStep >= 1 
-                      ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 shadow-md shadow-yellow-300/40' 
-                      : 'bg-white border-2 border-gray-200'}`}
-                >
-                  {currentStep > 1 ? (
-                    <CheckCircleIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                  ) : (
-                    <span className={`text-sm sm:text-base font-bold ${currentStep >= 1 ? 'text-white' : 'text-gray-500'}`}>1</span>
-                  )}
-                </motion.div>
-                <p className={`mt-1 text-[10px] sm:text-xs font-medium leading-none text-center ${currentStep >= 1 ? 'text-gray-700' : 'text-gray-500'}`}>
-                  Type de<br/>compte
-                </p>
-              </div>
-              
-              {/* Step 2 */}
-              <div className="relative z-10 flex flex-col items-center px-2">
-                <motion.div 
-                  variants={progressVariants}
-                  initial="inactive"
-                  animate={currentStep >= 2 ? "active" : "inactive"}
-                  whileHover={{ scale: 1.05 }}
-                  className={`flex items-center justify-center h-7 w-7 sm:h-10 sm:w-10 rounded-full 
-                    ${currentStep >= 2 
-                      ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 shadow-md shadow-yellow-300/40' 
-                      : 'bg-white border-2 border-gray-200'}`}
-                >
-                  <span className={`text-sm sm:text-base font-bold ${currentStep >= 2 ? 'text-white' : 'text-gray-500'}`}>2</span>
-                </motion.div>
-                <p className={`mt-1 text-[10px] sm:text-xs font-medium leading-none text-center ${currentStep >= 2 ? 'text-gray-700' : 'text-gray-500'}`}>
-                  Connexion
-                </p>
+        <div className="flex-grow flex flex-col overflow-hidden">
+          {/* Main content - scrollable if needed */}
+          <div className="px-5 py-4 flex-grow flex flex-col overflow-y-auto">
+            {/* Logo and header */}
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-300 rounded-full blur-md opacity-70"></div>
+                <img
+                  src="./TlefliLogo.webp"
+                  alt="TLEFLI Logo"
+                  className="h-10 w-auto max-w-full rounded-full shadow-lg relative z-10 border-4 border-white"
+                />
               </div>
             </div>
-          </motion.div>
-        </div>
-
-        {/* Left Column: For tablet and desktop only */}
-        <div className="hidden md:flex flex-col w-1/2 bg-gradient-to-b from-yellow-50 to-white justify-start items-center overflow-hidden">
-          {/* Logo and header area with fixed height */}
-          <div className="w-full pt-20 sm:pt-28 pb-4 sm:pb-6 px-3 sm:px-5 flex flex-col items-center">
-            <motion.div 
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="relative"
-            >
-              <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 opacity-30 blur-md"></div>
-              <img
-                src="./TlefliLogo.webp"
-                alt="TLEFLI Logo"
-                className="h-12 sm:h-16 relative z-10 w-auto max-w-full rounded-full shadow-md border-2 border-white"
-              />
-            </motion.div>
             
-            <motion.h2 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-              className="mt-4 text-center text-base sm:text-lg md:text-xl font-bold text-gray-800"
-            >
-              <span className="bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
-                Créez votre compte
-              </span>
-            </motion.h2>
-          </div>
-
-          {/* Dynamic content area based on step */}
-          <div className="flex-1 w-full overflow-hidden flex flex-col justify-between relative">
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 relative">
-              {/* Step 1 Content */}
-              <motion.div 
-                key="step1"
-                variants={stepTransition}
-                initial={currentStep === 1 ? "visible" : "hidden"}
-                animate={currentStep === 1 ? "visible" : "exit"}
-                className="w-full space-y-4 absolute top-0 left-0 right-0"
-                style={{ display: currentStep === 1 ? 'block' : 'none' }}
-              >
-                <motion.p
-                  variants={itemVariants}
-                  className="text-center text-gray-600 text-xs sm:text-sm mb-4 sm:mb-6"
-                >
-                  Veuillez sélectionner le type de compte qui correspond le mieux à vos besoins
-                </motion.p>
-                
-                <div className="space-y-3 sm:space-y-3.5 transform scale-[0.98]">
-                  {userTypes.map((type) => (
-                    <motion.button
-                      key={type.id}
-                      variants={itemVariants}
-                      whileHover={{
-                        scale: 1.02,
-                        boxShadow: "0 10px 15px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -5px rgba(0, 0, 0, 0.04)",
-                      }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelected(type)}
-                      className={`
-                        w-full flex items-center p-3 sm:p-4 rounded-xl transition-all duration-300
-                        ${selected.id === type.id
-                          ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white shadow-lg'
-                          : 'bg-white text-gray-700 border border-gray-100 hover:border-yellow-200'}
-                        group
-                      `}
-                    >
-                      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl mr-2 sm:mr-3 ${
-                        selected.id === type.id 
-                          ? 'bg-white/20' 
-                          : 'bg-yellow-50 group-hover:bg-yellow-100'
-                      }`}>
-                        <type.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${
-                          selected.id === type.id ? 'text-white' : 'text-yellow-500'
-                        }`} />
-                      </div>
-                      <div className="text-left flex-1">
-                        <h3 className="font-bold text-sm sm:text-base">{type.title}</h3>
-                        <p className={`text-[10px] sm:text-xs ${selected.id === type.id ? 'text-white/90' : 'text-gray-500'}`}>
-                          {type.description}
-                        </p>
-                      </div>
-                      <div className="ml-2">
-                        {selected.id === type.id ? (
-                          <motion.div 
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 500 }}
-                          >
-                            <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                          </motion.div>
-                        ) : (
-                          <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full border-2 border-gray-200 group-hover:border-yellow-300"></div>
-                        )}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-                
-                <motion.div 
-                  variants={itemVariants}
-                  className="flex justify-center mt-6 sm:mt-8"
-                >
-                  <motion.button
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={goToNextStep}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500
-                            text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full 
-                            flex items-center shadow-lg hover:shadow-xl transition-all duration-300
-                            focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
-                  >
-                    <span className="font-medium text-xs sm:text-sm">Continuer</span>
-                    <ArrowRightIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1.5 sm:ml-2" />
-                  </motion.button>
-                </motion.div>
-              </motion.div>
+            <div className="text-center mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+                <span className="bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
+                  Créez votre compte
+                </span>
+              </h2>
               
-              {/* Step 2 Content */}
-              <motion.div 
-                key="step2"
-                variants={stepTransition}
-                initial={currentStep === 2 ? "visible" : "hidden"}
-                animate={currentStep === 2 ? "visible" : "hidden"}
-                className="w-full space-y-4 sm:space-y-5 transform scale-[0.98] absolute top-0 left-0 right-0"
-                style={{ display: currentStep === 2 ? 'block' : 'none' }}
-              >
-                <p className="text-center text-gray-600 text-xs sm:text-sm">
-                  Vous êtes sur le point de créer un compte :
-                </p>
-                
-                <motion.div 
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-white p-3 sm:p-4 rounded-xl shadow-md border-l-4 border-yellow-500"
-                >
-                  <div className="flex items-center">
-                    <div className="p-2 sm:p-2.5 bg-yellow-50 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
-                      <selected.icon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-bold text-gray-800">{selected.title}</h3>
-                      <p className="text-[10px] sm:text-xs text-gray-600">{selected.description}</p>
-                    </div>
-                  </div>
-                </motion.div>
-                
-                <div className="text-center flex justify-center mt-3 sm:mt-4">
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setCurrentStep(1)}
-                    className="bg-white hover:bg-gray-50 text-yellow-600 hover:text-yellow-700 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm
-                            border border-gray-200 hover:border-yellow-200 inline-flex items-center
-                            shadow-sm hover:shadow transition-all duration-300"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Modifier mon choix
-                  </motion.button>
-                </div>
-              </motion.div>
-            </div>
-            
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="text-center py-2 sm:py-3 w-full bg-gray-50 bg-opacity-50 border-t border-gray-100"
-            >
-              <p className="text-[10px] sm:text-xs text-gray-600">
-                Vous avez déjà un compte ?{' '}
-                <Link
-                  to="/login"
-                  className="font-medium text-yellow-600 hover:text-yellow-500 transition duration-300"
-                >
-                  Se connecter
-                </Link>
+              <p className="mt-2 text-sm text-gray-600">
+                Rejoignez TLEFLI pour retrouver vos objets perdus
               </p>
-            </motion.div>
-          </div>
-        </div>
+            </div>
 
-        {/* Right Column: Fixed to ensure logo visibility during transitions */}
-        <div className="w-full md:w-1/2 flex flex-col justify-between h-full overflow-hidden bg-gradient-to-b from-white to-gray-50">
-          {/* Mobile content for first view - Moved to higher z-index to stay above transitions */}
-          <div className="md:hidden pt-16 sm:pt-20 px-4 flex flex-col items-center relative z-30">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="relative mb-2 sm:mb-4"
-            >
-              <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 opacity-30 blur-md"></div>
-              <img
-                src="./TlefliLogo.webp"
-                alt="TLEFLI Logo"
-                className="h-10 sm:h-14 w-auto max-w-full rounded-full shadow-md border-2 border-white relative z-10"
-              />
-            </motion.div>
-            
-            <motion.h2 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
-              className="text-center text-base sm:text-lg font-bold text-gray-800 mb-1"
-            >
-              <span className="bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
-                Créez votre compte
-              </span>
-            </motion.h2>
-          </div>
-          
-          {/* Main content area - Added padding-top to prevent overlap with logo */}
-          <div className="flex-1 overflow-auto flex flex-col justify-center items-center mt-1 sm:mt-4 md:mt-0 pt-4 md:pt-0">
-            <div className="w-full max-w-md px-3 sm:px-4 md:px-8 relative">
-              {/* Mobile steps display - Added lower z-index so it doesn't cover logo */}
-              <div className="md:hidden flex-shrink-0 relative z-20">
-                {/* Mobile Step 1 Content */}
-                <motion.div
-                  key="mobile-step1"
-                  variants={stepTransition}
-                  initial={currentStep === 1 ? "visible" : "hidden"}
-                  animate={currentStep === 1 ? "visible" : "exit"}
-                  className="overflow-hidden w-full"
-                  style={{ display: currentStep === 1 ? 'block' : 'none' }}
-                >
-                  <p className="text-center text-gray-600 text-[10px] sm:text-xs mb-3 sm:mb-4">
-                    Veuillez sélectionner le type de compte qui correspond le mieux à vos besoins
-                  </p>
-                  <div className="space-y-2 sm:space-y-2.5 transform scale-[0.98]">
-                    {userTypes.map((type) => (
-                      <motion.button
-                        key={type.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelected(type)}
-                        className={`
-                          w-full flex items-center p-2.5 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-300
-                          ${selected.id === type.id
-                            ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white shadow-md'
-                            : 'bg-white text-gray-700 border border-gray-100 hover:border-yellow-200'}
-                          group
-                        `}
-                      >
-                        <div className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg mr-2 sm:mr-3 ${
-                          selected.id === type.id 
-                            ? 'bg-white/20' 
-                            : 'bg-yellow-50 group-hover:bg-yellow-100'
-                        }`}>
-                          <type.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                            selected.id === type.id ? 'text-white' : 'text-yellow-500'
-                          }`} />
-                        </div>
-                        <div className="text-left flex-1">
-                          <h3 className="font-semibold text-xs sm:text-sm">{type.title}</h3>
-                          <p className={`text-[9px] sm:text-xs ${selected.id === type.id ? 'text-white/90' : 'text-gray-500'}`}>
-                            {type.description}
-                          </p>
-                        </div>
-                        <div className="ml-2">
-                          {selected.id === type.id ? (
-                            <motion.div
-                              initial={{ scale: 0.5, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ type: "spring", stiffness: 500 }}
-                            >
-                              <CheckCircleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                            </motion.div>
-                          ) : (
-                            <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full border-2 border-gray-200 group-hover:border-yellow-300"></div>
-                          )}
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                  <div className="flex justify-center mt-4 sm:mt-5">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={goToNextStep}
-                      className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500
-                             text-white px-4 sm:px-5 py-1.5 sm:py-2 
-                             rounded-full flex items-center shadow-md hover:shadow-lg transition-all duration-300
-                             focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
-                    >
-                      <span className="font-medium text-xs">Continuer</span>
-                      <ArrowRightIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
-                    </motion.button>
-                  </div>
-                </motion.div>
-                
-                {/* Mobile Step 2 Content */}
-                <motion.div
-                  key="mobile-step2"
-                  variants={stepTransition}
-                  initial={currentStep === 2 ? "visible" : "hidden"}
-                  animate={currentStep === 2 ? "visible" : "hidden"}
-                  className="mb-3 sm:mb-4 transform scale-[0.98] w-full"
-                  style={{ display: currentStep === 2 ? 'block' : 'none' }}
-                >
-                  <p className="text-center text-gray-600 text-[10px] sm:text-xs mb-2 sm:mb-3">
-                    Vous êtes sur le point de créer un compte :
-                  </p>
-                  <motion.div 
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border-l-4 border-yellow-500 mb-3 sm:mb-4"
+            {/* Account Type Selection */}
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-gray-800 mb-3">Type de compte</h3>
+              <div className="space-y-2">
+                {userTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => setSelected(type)}
+                    className={`w-full flex items-center p-3 rounded-xl transition-all duration-300 ${
+                      selected.id === type.id
+                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white shadow-lg'
+                        : 'bg-white text-gray-700 border border-gray-100 hover:border-yellow-200 shadow-sm'
+                    } group`}
                   >
-                    <div className="flex items-center">
-                      <div className="p-1.5 sm:p-2 bg-yellow-50 rounded-md sm:rounded-lg mr-2 sm:mr-3">
-                        <selected.icon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-xs sm:text-sm">{selected.title}</h3>
-                        <p className="text-[9px] sm:text-xs text-gray-600">{selected.description}</p>
-                      </div>
+                    <div className={`p-2 rounded-lg mr-3 ${
+                      selected.id === type.id 
+                        ? 'bg-white/20' 
+                        : 'bg-yellow-50 group-hover:bg-yellow-100'
+                    }`}>
+                      <type.icon className={`h-5 w-5 ${
+                        selected.id === type.id ? 'text-white' : 'text-yellow-500'
+                      }`} />
                     </div>
-                  </motion.div>
-                  <div className="text-center">
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setCurrentStep(1)}
-                      className="bg-white hover:bg-gray-50 text-yellow-600 hover:text-yellow-700 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs
-                             border border-gray-200 hover:border-yellow-200 inline-flex items-center
-                             shadow-sm hover:shadow transition-all duration-300"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      Modifier mon choix
-                    </motion.button>
-                  </div>
-                </motion.div>
+                    <div className="text-left flex-1">
+                      <h4 className="font-medium text-sm">{type.title}</h4>
+                      <p className={`text-xs ${selected.id === type.id ? 'text-white/90' : 'text-gray-500'}`}>
+                        {type.description}
+                      </p>
+                    </div>
+                    <div className="ml-2">
+                      {selected.id === type.id ? (
+                        <CheckCircleIcon className="h-5 w-5 text-white" />
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border-2 border-gray-200 group-hover:border-yellow-300"></div>
+                      )}
+                    </div>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Step 2 content - Sign in with Google (responsive for all screens) */}
-              {currentStep === 2 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="py-2 sm:py-4 flex-1 flex flex-col mx-auto w-full overflow-hidden"
-                >
-                  {/* Error Handling */}
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="mb-3 sm:mb-4 bg-red-50 border-l-3 border-red-400 rounded-lg p-2.5 sm:p-3 flex items-start"
-                      role="alert"
-                      aria-live="assertive"
-                    >
-                      <ExclamationTriangleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-400 mr-1.5 sm:mr-2 mt-0.5 flex-shrink-0" />
-                      <p className="text-[10px] sm:text-xs text-red-700">{error}</p>
-                    </motion.div>
-                  )}
-
-                  {/* Title section centered */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-center"
-                  >
-                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-1 bg-gradient-to-r from-yellow-700 to-yellow-500 bg-clip-text text-transparent">
-                      Connexion avec Google
-                    </h3>
-                    <p className="text-[10px] sm:text-xs md:text-sm text-gray-600">
-                      Utilisez votre compte Google pour créer votre compte en toute sécurité
+            {/* Registration Methods */}
+            {!showEmailVerification && (
+              <div className="space-y-3 mb-4">
+                <h3 className="text-base font-semibold text-gray-800">Méthode d'inscription</h3>
+                
+                {!showEmailForm && (
+                  <>
+                    <p className="text-center text-gray-600 text-sm mb-3">
+                      Choisissez votre méthode d'inscription :
                     </p>
-                  </motion.div>
-
-                  {/* Security notice with improved style and responsiveness */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-3 sm:mt-5 p-2.5 sm:p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 flex items-center"
-                  >
-                    <div className="bg-white p-1 sm:p-1.5 rounded-full mr-2 sm:mr-2.5 shadow-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    
+                    {/* Google Registration - Same style as Login */}
+                    <button
+                      onClick={handleGoogleAuth}
+                      disabled={isLoading}
+                      className="w-full flex items-center justify-center py-3 px-5 
+                             rounded-xl text-sm font-medium text-gray-700 
+                             bg-white hover:bg-gray-50 focus:outline-none 
+                             shadow-lg hover:shadow-xl transition-all duration-300
+                             border border-gray-300 hover:border-yellow-300
+                             relative overflow-hidden group disabled:opacity-50"
+                    >
+                      <span className="absolute inset-0 w-0 bg-gradient-to-r from-yellow-50 to-yellow-100 transition-all duration-500 ease-out group-hover:w-full"></span>
+                      
+                      <svg className="h-5 w-5 mr-2 relative z-10" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                       </svg>
-                    </div>
-                    <p className="text-blue-800 text-[9px] sm:text-xs font-medium">
-                      Pour votre sécurité, TLEFLI utilise uniquement l'authentification Google.
-                    </p>
-                  </motion.div>
+                      <span className="text-sm relative z-10">S'inscrire avec Google</span>
+                    </button>
+                  </>
+                )}
 
-                  {/* Google Sign-In Button - Enhanced with modern style and better responsiveness */}
-                  <div className="mt-5 sm:mt-8 mb-2 sm:mb-4">
-                    <motion.div 
-                      whileHover={{ scale: 1.03, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full"
-                    >
+                {/* Email Registration - Same style as Login */}
+                <button
+                  onClick={() => setShowEmailForm(!showEmailForm)}
+                  className="w-full flex items-center justify-center py-3 px-5 
+                         rounded-xl text-sm font-medium text-white
+                         bg-yellow-600 hover:bg-yellow-700 focus:outline-none 
+                         shadow-lg hover:shadow-xl transition-all duration-300
+                         border border-yellow-600"
+                >
+                  <EnvelopeIcon className="h-5 w-5 mr-2" />
+                  <span className="text-sm">
+                    {showEmailForm ? "Revenir aux options" : "S'inscrire avec Email"}
+                  </span>
+                </button>
+
+                {/* Security notice - only show when not in email form */}
+                {!showEmailForm && (
+                  <div className="mt-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200 p-3 shadow-sm">
+                    <div className="flex items-center justify-center mb-1">
+                      <LockClosedIcon className="h-4 w-4 text-yellow-600 mr-1.5" />
+                      <h3 className="font-semibold text-yellow-800 text-xs">Inscription sécurisée</h3>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Email Registration Form - Show conditionally */}
+            {showEmailForm && (
+              <div className="bg-gray-50 p-4 rounded-xl mb-4">
+                <h4 className="font-semibold text-base text-gray-800 mb-4">Inscription avec Email</h4>
+                
+                {error && (
+                  <div className="mb-4 bg-red-50 border-l-4 border-red-400 rounded-lg p-3 flex items-start">
+                    <ExclamationTriangleIcon className="h-4 w-4 text-red-400 mr-2 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleEmailRegistration} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="email">
+                      Adresse Email *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={emailFormData.email}
+                      onChange={handleEmailFormChange}
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition duration-200"
+                      placeholder="votre@email.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="password">
+                      Mot de passe *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        id="password"
+                        name="password"
+                        value={emailFormData.password}
+                        onChange={handleEmailFormChange}
+                        required
+                        className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition duration-200"
+                        placeholder="Minimum 8 caractères"
+                      />
                       <button
                         type="button"
-                        onClick={handleGoogleAuth}
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center py-2.5 sm:py-3.5 px-4 sm:px-5 
-                              rounded-xl text-xs sm:text-sm font-medium text-gray-700 bg-white 
-                              border border-gray-200 hover:border-yellow-300
-                              focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2
-                              transition-all duration-300 shadow-md sm:shadow-lg hover:shadow-xl
-                              relative overflow-hidden group"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm"
                       >
-                        <span className="absolute inset-0 w-0 bg-gradient-to-r from-yellow-50 to-yellow-100 transition-all duration-500 ease-out group-hover:w-full"></span>
-                        <span className="absolute -inset-1 scale-x-0 rounded-xl border border-yellow-300 transition-transform duration-500 group-hover:scale-x-100 group-hover:scale-y-100 pointer-events-none"></span>
-                        
-                        {isLoading ? (
-                          <div className="flex items-center relative z-10">
-                            <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-yellow-500" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span className="text-xs sm:text-sm">Connexion en cours...</span>
-                          </div>
+                        {showPassword ? (
+                          <EyeSlashIcon className="h-4 w-4 text-gray-500" />
                         ) : (
-                          <div className="flex items-center relative z-10">
-                            <div className="bg-white p-1 sm:p-1.5 rounded-full shadow-sm mr-2.5 sm:mr-3 group-hover:shadow-md transition-all duration-300">
-                              <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
-                                <path
-                                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                                  fill="#4285F4"
-                                />
-                                <path
-                                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                  fill="#34A853"
-                                />
-                                <path
-                                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                                  fill="#FBBC05"
-                                />
-                                <path
-                                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                  fill="#EA4335"
-                                />
-                              </svg>
-                            </div>
-                            <span className="text-xs sm:text-sm font-medium group-hover:text-gray-900 transition-colors duration-300">
-                              S'inscrire avec Google
-                            </span>
-                          </div>
+                          <EyeIcon className="h-4 w-4 text-gray-500" />
                         )}
                       </button>
-                    </motion.div>
+                    </div>
+                    {/* Password strength indicator */}
+                    {emailFormData.password && (
+                      <div className="mt-2">
+                        <div className="flex space-x-1">
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-1 flex-1 rounded ${
+                                level <= passwordStrength
+                                  ? level <= 2 ? 'bg-red-400' : level <= 3 ? 'bg-yellow-400' : level <= 4 ? 'bg-blue-400' : 'bg-green-400'
+                                  : 'bg-gray-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Force: {passwordStrength <= 2 ? 'Faible' : passwordStrength <= 3 ? 'Moyenne' : passwordStrength <= 4 ? 'Forte' : 'Très forte'}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </motion.div>
-              )}
-            </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="confirmPassword">
+                      Confirmer le mot de passe *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={emailFormData.confirmPassword}
+                        onChange={handleEmailFormChange}
+                        required
+                        className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition duration-200"
+                        placeholder="Confirmez votre mot de passe"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeSlashIcon className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <EyeIcon className="h-4 w-4 text-gray-500" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition duration-300 disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Inscription...
+                      </span>
+                    ) : (
+                      "S'inscrire"
+                    )}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Email Verification OTP Form */}
+            {showEmailVerification && (
+              <div className="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-200">
+                <div className="text-center mb-4">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-3">
+                    <EnvelopeIcon className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h4 className="font-semibold text-base text-gray-800">Vérification de votre email</h4>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Nous avons envoyé un code de vérification à <strong>{emailVerificationData.email}</strong>
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="mb-4 bg-red-50 border-l-4 border-red-400 rounded-lg p-3 flex items-start">
+                    <ExclamationTriangleIcon className="h-4 w-4 text-red-400 mr-2 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleEmailVerification} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="emailOtp">
+                      Code de vérification (6 chiffres) *
+                    </label>
+                    <input
+                      type="text"
+                      id="emailOtp"
+                      value={emailVerificationData.otp}
+                      onChange={handleEmailOTPChange}
+                      maxLength={6}
+                      required
+                      className={`w-full px-3 py-2 text-center text-lg font-mono border rounded-lg focus:ring-2 transition duration-200 ${
+                        emailOtpValidation.showSuccess
+                          ? 'border-green-500 focus:ring-green-500 bg-green-50'
+                          : emailOtpValidation.isInvalid
+                          ? 'border-red-500 focus:ring-red-500 bg-red-50'
+                          : emailOtpValidation.isValid
+                          ? 'border-blue-500 focus:ring-blue-500 bg-blue-50'
+                          : 'border-gray-300 focus:ring-blue-500'
+                      }`}
+                      placeholder="000000"
+                    />
+                    <p className="text-xs text-gray-600 mt-1">
+                      Entrez le code de 6 chiffres reçu par email
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isVerifyingEmailOTP || emailVerificationData.otp.length !== 6}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isVerifyingEmailOTP ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Vérification...
+                      </span>
+                    ) : (
+                      "Vérifier l'email"
+                    )}
+                  </button>
+
+                  <div className="text-center text-sm text-gray-600">
+                    <p>Vous n'avez pas reçu le code ?</p>
+                    {canResendEmailOTP ? (
+                      <button
+                        type="button"
+                        onClick={handleResendEmailVerification}
+                        className="text-blue-600 hover:text-blue-500 font-medium transition duration-300"
+                      >
+                        Renvoyer le code
+                      </button>
+                    ) : (
+                      <span className="text-gray-500">
+                        Renvoyer dans {emailResendTimer}s
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEmailVerification(false);
+                        setShowEmailForm(true);
+                        setEmailVerificationData({ otp: '', userId: '', email: '' });
+                        setError('');
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-500 transition duration-300"
+                    >
+                      ← Retour à l'inscription
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
           
-          {/* Unified footer with better sizing and spacing for small screens */}
-          <div className="bg-gray-50 p-2.5 sm:p-3 border-t border-gray-100 flex flex-col items-center">
-            <div className="text-center text-[9px] sm:text-xs text-gray-500">
-              <p>En continuant, vous acceptez les Conditions d'utilisation de TLEFLI</p>
-              <div className="mt-1 mb-1.5 sm:mb-2">
+          {/* Footer */}
+          <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
+            <div className="text-center text-xs text-gray-500">
+              <p className="mb-2">En continuant, vous acceptez les Conditions d'utilisation de TLEFLI</p>
+              <div className="space-y-1">
                 <Link
                   to="/conditions"
                   className="inline-flex items-center text-yellow-600 hover:text-yellow-700 font-medium transition duration-300"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Conditions d'utilisation
                 </Link>
+                
+                <p className="text-gray-600">
+                  Vous avez déjà un compte ?{' '}
+                  <Link
+                    to="/login"
+                    className="font-medium text-yellow-600 hover:text-yellow-500 transition duration-300"
+                  >
+                    Se connecter
+                  </Link>
+                </p>
               </div>
-            </div>
-            
-            {/* Mobile-only login link */}
-            <div className="md:hidden text-center">
-              <p className="text-[9px] sm:text-xs text-gray-600">
-                Vous avez déjà un compte ?{' '}
-                <Link
-                  to="/login"
-                  className="font-medium text-yellow-600 hover:text-yellow-500 transition duration-300"
-                >
-                  Se connecter
-                </Link>
-              </p>
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PaymentButton from '../components/PaymentButton';
 import { getItemPaymentStatus } from '../services/itemsService';
+import authService from '../services/authService';
 import toast from '../components/Toast';
 
 const CheckoutPage = () => {
@@ -16,6 +17,17 @@ const CheckoutPage = () => {
     const fetchItemFromQuery = async () => {
       try {
         setIsLoading(true);
+
+        // Check authentication for production
+        const isProduction = window.location.hostname === 'tlefli.ma' || 
+                           import.meta.env.VITE_ENVIRONMENT === 'production';
+        
+        if (isProduction && !authService.getToken()) {
+          setError('Authentification requise pour accéder à cette page');
+          toast.error('Veuillez vous connecter pour continuer');
+          navigate('/login');
+          return;
+        }
 
         // Parse the item data from URL query parameters
         const params = new URLSearchParams(location.search);
@@ -138,6 +150,28 @@ const CheckoutPage = () => {
           {/* Payment details */}
           <div className="px-6 py-4 border-b">
             <h2 className="text-lg font-medium text-gray-900">Détails du paiement</h2>
+            
+            {/* Production environment notice */}
+            {(window.location.hostname === 'tlefli.ma' || import.meta.env.VITE_ENVIRONMENT === 'production') && (
+              <div className="mt-2 mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      Paiement sécurisé
+                    </h3>
+                    <div className="mt-1 text-sm text-blue-700">
+                      <p>Votre paiement sera traité de manière sécurisée via PayPal. Les frais de réclamation sont obligatoires pour les objets trouvés authentifiés.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="mt-4 bg-gray-50 p-4 rounded-md">
               <div className="flex justify-between text-sm mb-2">
                 <span>Frais de réclamation:</span>

@@ -19,7 +19,11 @@ import {
   PrinterIcon, // Make sure PrinterIcon is imported here
   ChevronLeftIcon,
   ChevronRightIcon,
-  ClockIcon
+  ClockIcon,
+  ShieldExclamationIcon,
+  ExclamationTriangleIcon,
+  HomeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline';
 import itemsService from '../services/itemsService';
 import { useAuth } from '../contexts/AuthContext';
@@ -344,18 +348,25 @@ export default function ItemDetails() {
             }
           }
         } else {
-          setError(response.error || 'Failed to fetch item details');
+          setError(response.error || 'Impossible de charger cet objet');
         }
       } catch (err) {
         console.error('Error in fetchItem:', err);
-        setError('Failed to fetch item details');
+        // Check if it's an authorization error
+        if (err.response?.status === 403) {
+          setError('You are not authorized to view this item. Only the item owner can access these details.');
+        } else if (err.response?.status === 401) {
+          setError('Authentication required to view item details.');
+        } else {
+          setError(err.response?.data?.message || err.message || 'Impossible de charger cet objet');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchItem();
-  }, [id]);
+  }, [id, currentUser]); // Add currentUser dependency
 
   useEffect(() => {
     setIsTwinned(item?.twin?.isTwinned || false);
@@ -641,18 +652,117 @@ export default function ItemDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-yellow-200 border-t-yellow-500 mx-auto"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-pulse">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-gray-600 font-medium">Chargement des détails de l'objet...</p>
+          <p className="mt-1 text-sm text-gray-500">Veuillez patienter</p>
+        </div>
       </div>
     );
   }
 
   if (error || !item) {
+    const isUnauthorized = error && error.includes('not authorized');
+    
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-red-50 p-4 rounded-lg">
-          <div className="text-red-700 font-medium">Error loading item details</div>
-          <div className="text-red-600 mt-1">{error}</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          {isUnauthorized ? (
+            // Unauthorized Access UI
+            <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+              {/* Header with icon */}
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-8 text-center">
+                <div className="mx-auto w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
+                  <EyeSlashIcon className="h-8 w-8 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-white">Accès Restreint</h1>
+                <p className="text-amber-100 mt-2">Cette page n'est pas accessible</p>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-8">
+                <div className="text-center mb-6">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                    <ShieldExclamationIcon className="h-6 w-6 text-amber-600 mx-auto mb-2" />
+                    <p className="text-amber-800 text-sm font-medium">
+                      Seul le propriétaire de l'objet peut consulter ces détails
+                    </p>
+                  </div>
+                  
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Pour des raisons de confidentialité et de sécurité, vous ne pouvez voir que les objets que vous avez déclarés.
+                  </p>
+                </div>
+                
+                {/* Action buttons */}
+                <div className="space-y-3">
+                  <Link
+                    to="/items"
+                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    <ArrowLeftIcon className="h-5 w-5 mr-2" />
+                    Retour à la liste des objets
+                  </Link>
+                  
+                  <Link
+                    to="/dashboard"
+                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                  >
+                    <HomeIcon className="h-5 w-5 mr-2" />
+                    Aller au tableau de bord
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // General Error UI
+            <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+              {/* Header with icon */}
+              <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-8 text-center">
+                <div className="mx-auto w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
+                  <ExclamationTriangleIcon className="h-8 w-8 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-white">Erreur de Chargement</h1>
+                <p className="text-red-100 mt-2">Impossible de charger les détails</p>
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 py-8">
+                <div className="text-center mb-6">
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {error || "L'objet demandé n'existe pas ou n'est plus disponible."}
+                  </p>
+                </div>
+                
+                {/* Action buttons */}
+                <div className="space-y-3">
+                  <Link
+                    to="/items"
+                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    <ArrowLeftIcon className="h-5 w-5 mr-2" />
+                    Retour à la liste des objets
+                  </Link>
+                  
+                  <Link
+                    to="/dashboard"
+                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                  >
+                    <HomeIcon className="h-5 w-5 mr-2" />
+                    Aller au tableau de bord
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

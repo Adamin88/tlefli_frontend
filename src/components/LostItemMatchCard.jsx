@@ -11,7 +11,8 @@ const LostItemMatchCard = ({
   onNotificationRefresh,
   sourceItemId,
   isSourceItem = false,
-  onVerificationComplete
+  onVerificationComplete,
+  onDataRefresh // New prop for refreshing parent component data
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [itemReference, setItemReference] = useState(null);
@@ -225,6 +226,16 @@ const LostItemMatchCard = ({
         
         // Force a refresh of the component
         setForceRender(prev => prev + 1);
+        
+        // Trigger data refresh to update parent components
+        if (onDataRefresh) {
+          console.log('LostItemMatchCard: Triggering data refresh after manual untwinning');
+          try {
+            await onDataRefresh();
+          } catch (error) {
+            console.error('LostItemMatchCard: Error refreshing data after untwinning:', error);
+          }
+        }
       } else {
         throw new Error(response?.error || 'Failed to untwin items');
       }
@@ -251,6 +262,14 @@ const LostItemMatchCard = ({
         // Force re-render
         setForceRender(prev => prev + 1);
       }
+      
+      // Trigger data refresh to update parent components
+      if (onDataRefresh) {
+        console.log('LostItemMatchCard: Triggering data refresh after untwinning');
+        onDataRefresh().catch(error => {
+          console.error('LostItemMatchCard: Error refreshing data after untwinning:', error);
+        });
+      }
     } else if (isCorrect) {
       // If answer is correct, update the item status to authenticated
       match.item.status = 'authenticated';
@@ -259,13 +278,21 @@ const LostItemMatchCard = ({
       setForceRender(prev => prev + 1);
       
       console.log('LostItemMatchCard: Updated status to authenticated after correct answer');
+      
+      // Trigger data refresh to update parent components
+      if (onDataRefresh) {
+        console.log('LostItemMatchCard: Triggering data refresh after authentication');
+        onDataRefresh().catch(error => {
+          console.error('LostItemMatchCard: Error refreshing data after authentication:', error);
+        });
+      }
     }
     
     // Propagate the event to parent components if needed
     if (onVerificationComplete) {
       onVerificationComplete(isCorrect, answerId, untwinned, statusReset);
     }
-  }, [match.item, onVerificationComplete]);
+  }, [match.item, onVerificationComplete, onDataRefresh]);
 
   // Render button for untwin under the image - only show if the user can untwin
   const renderActionButtons = () => {
@@ -291,7 +318,7 @@ const LostItemMatchCard = ({
               Annulation...
             </>
           ) : (
-            'Annuler le jumelage'
+            `Ce n'est pas votre objet`
           )}
         </button>
       </div>
@@ -329,6 +356,7 @@ const LostItemMatchCard = ({
       renderDetailsContent={renderDetailsContent}
       onVerificationComplete={handleVerificationComplete}
       renderHeaderExtras={renderHeaderExtras}
+      onDataRefresh={onDataRefresh}
     >
       {/* No need for renderDistanceBadge - it's now in the header */}
     </BaseMatchCard>

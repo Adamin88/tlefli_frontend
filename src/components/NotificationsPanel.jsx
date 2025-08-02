@@ -14,8 +14,7 @@ import {
   XMarkIcon,
   CalendarIcon,
   CheckBadgeIcon,
-  InboxIcon,
-  ArchiveBoxXMarkIcon
+  InboxIcon
 } from '@heroicons/react/24/outline';
 import itemsService from '../services/itemsService';
 import SecretAnswerVerification from './SecretAnswerVerification';
@@ -44,16 +43,16 @@ const NotificationsPanel = () => {
       const response = await itemsService.verifySecretAnswer(itemId, answerId, isCorrect);
       
       if (response.success) {
-        toast.success(isCorrect 
-          ? 'Réponse marquée comme correcte' 
-          : 'Réponse marquée comme incorrecte. Le jumelage a été annulé.');
+        console.log(isCorrect 
+          ? 'Answer marked as correct' 
+          : 'Answer marked as incorrect. Items untwinned.');
 
         // If this verification untwinned the items, the backend already handled that
         // Just log for debugging
         if (!isCorrect) {
           console.log('Items have been untwinned due to incorrect answer');
         }
-
+        
         await fetchNotifications(); // Refresh notifications after verification
         setSelectedAnswer(null); // Reset selected answer
         setSelectedItem(null);
@@ -175,45 +174,8 @@ const NotificationsPanel = () => {
   };
 
   const renderNotificationActions = (notification) => {
-    if (!notification || !notification.type) return null;
-    
-    const { type, itemId, metadata } = notification;
-
-    switch (type) {
-      case 'secret_answer_pending':
-        return metadata?.answerId ? (
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleViewAnswer(notification)}
-              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200 shadow-sm hover:shadow"
-            >
-              <EyeIcon className="h-4 w-4 mr-1.5" />
-              Voir et vérifier
-            </button>
-          </div>
-        ) : null;
-      case 'secret_answer_verified':
-      case 'secret_answer_submitted':
-        return itemId ? (
-          <button
-            onClick={() => navigateToItem(itemId)}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-all duration-200 shadow-sm hover:shadow transform hover:-translate-y-0.5"
-          >
-            <EyeIcon className="h-4 w-4 mr-1.5" />
-            Voir l'objet
-          </button>
-        ) : null;
-      default:
-        return itemId ? (
-          <button
-            onClick={() => navigateToItem(itemId)}
-            className="p-1.5 text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors duration-200"
-            title="Voir les détails"
-          >
-            <EyeIcon className="h-5 w-5" />
-          </button>
-        ) : null;
-    }
+    // Remove this function's button since we have one in renderNotificationContent
+    return null;
   };
 
   const getNotificationIcon = (type) => {
@@ -230,10 +192,6 @@ const NotificationsPanel = () => {
         return <div className="p-2 bg-purple-100 rounded-full"><svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg></div>;
       case 'STATUS_UPDATE':
         return <div className="p-2 bg-indigo-100 rounded-full"><ArrowPathIcon className="h-5 w-5 text-indigo-600" /></div>;
-      case 'ITEM_TWINNED':
-        return <div className="p-2 bg-pink-100 rounded-full"><svg className="h-5 w-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg></div>;
-      case 'ITEM_UNTWINNED':
-        return <div className="p-2 bg-red-100 rounded-full"><ArchiveBoxXMarkIcon className="h-5 w-5 text-red-600" /></div>;
       default:
         return <div className="p-2 bg-gray-100 rounded-full"><BellIcon className="h-5 w-5 text-gray-600" /></div>;
     }
@@ -242,79 +200,24 @@ const NotificationsPanel = () => {
   const renderNotificationContent = (notification) => {
     if (!notification || !notification.type) return null;
 
-    switch (notification.type.toUpperCase()) {
-      case 'SECRET_ANSWER_PENDING':
-        return (
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm text-gray-600">{notification.message}</p>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => {
-                  handleLinkClick(notification);
-                  handleViewAnswer(notification);
-                }}
-                className="flex items-center px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200"
-              >
-                <EyeIcon className="h-4 w-4 mr-1.5" />
-                Voir la réponse
-              </button>
-            </div>
+    const defaultItemId = getItemId(notification.itemId);
+    return (
+      <div className="flex flex-col space-y-2">
+        <p className="text-sm text-gray-600">{notification.message}</p>
+        {defaultItemId && (
+          <div className="flex space-x-2">
+            <Link
+              to={`/items/${defaultItemId}`}
+              onClick={() => handleLinkClick(notification)}
+              className="flex items-center px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200"
+            >
+              <EyeIcon className="h-4 w-4 mr-1.5" />
+              Voir l'objet
+            </Link>
           </div>
-        );
-
-      case 'ITEM_TWINNED':
-      case 'ITEM_UNTWINNED':
-        const itemId = getItemId(notification.itemId);
-        const twinItemId = getItemId(notification.metadata?.twinItemId);
-
-        return (
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm text-gray-600">{notification.message}</p>
-            <div className="flex space-x-2">
-              {itemId && (
-                <Link
-                  to={`/items/${itemId}`}
-                  onClick={() => handleLinkClick(notification)}
-                  className="flex items-center px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200"
-                >
-                  <EyeIcon className="h-4 w-4 mr-1.5" />
-                  Voir mon objet
-                </Link>
-              )}
-              {twinItemId && (
-                <Link
-                  to={`/items/${twinItemId}`}
-                  onClick={() => handleLinkClick(notification)}
-                  className="flex items-center px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200"
-                >
-                  <EyeIcon className="h-4 w-4 mr-1.5" />
-                  Voir l'objet jumelé
-                </Link>
-              )}
-            </div>
-          </div>
-        );
-
-      default:
-        const defaultItemId = getItemId(notification.itemId);
-        return (
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm text-gray-600">{notification.message}</p>
-            {defaultItemId && (
-              <div className="flex space-x-2">
-                <Link
-                  to={`/items/${defaultItemId}`}
-                  onClick={() => handleLinkClick(notification)}
-                  className="flex items-center px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200"
-                >
-                  <EyeIcon className="h-4 w-4 mr-1.5" />
-                  Voir l'objet
-                </Link>
-              </div>
-            )}
-          </div>
-        );
-    }
+        )}
+      </div>
+    );
   };
 
   // Function to group notifications by date
@@ -376,7 +279,6 @@ const NotificationsPanel = () => {
   
   const getFilterCount = (filterType) => {
     if (!Array.isArray(notifications)) return 0;
-    
     if (filterType === 'unread') {
       return notifications.filter(n => !n.read).length;
     } else if (filterType !== 'all') {
@@ -449,34 +351,27 @@ const NotificationsPanel = () => {
           <div className="relative">
             <input
               type="text"
+              placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher..."
-              className="pl-9 pr-3 py-2 w-full sm:w-auto rounded-lg border border-gray-200 focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm transition-all duration-200"
+              className="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent bg-white"
             />
-            <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            <svg className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                title="Effacer la recherche"
-              >
-                <XMarkIcon className="h-4 w-4" />
-              </button>
-            )}
           </div>
-
+          
           {/* Filter dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowFilterMenu(!showFilterMenu)}
-              className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${showFilterMenu ? 'bg-blue-50 text-blue-700' : 'bg-white text-gray-700 border border-gray-200'}`}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200"
             >
               <FunnelIcon className="h-4 w-4 mr-2" />
               Filtrer
-              {filter !== 'all' && <span className="ml-1 w-2 h-2 bg-blue-600 rounded-full"></span>}
+              <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
             
             {showFilterMenu && (
@@ -738,7 +633,6 @@ const NotificationsPanel = () => {
                 <CheckIcon className="h-4 w-4" />
               </button>
             )}
-            {renderNotificationActions(notification)}
           </div>
         </div>
       </div>

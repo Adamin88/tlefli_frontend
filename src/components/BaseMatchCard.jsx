@@ -121,13 +121,15 @@ const BaseMatchCard = ({
   renderFooter,
   renderActionButtons,
   onVerificationComplete,
-  renderHeaderExtras
+  renderHeaderExtras,
+  onDataRefresh // New prop for refreshing data when timer expires
 }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [detailsAnimating, setDetailsAnimating] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Modern status badges with meaningful colors
   const statusBadges = {
@@ -167,6 +169,22 @@ const BaseMatchCard = ({
     
     return () => clearInterval(timer);
   }, [match?.score]);
+  
+  // Effect to handle data refresh when timer expires
+  useEffect(() => {
+    if (refreshTrigger > 0 && onDataRefresh) {
+      console.log('BaseMatchCard: Triggering data refresh due to timer expiration');
+      onDataRefresh();
+    }
+  }, [refreshTrigger, onDataRefresh]);
+  
+  // Expose refresh function to child components through forceRender prop changes
+  useEffect(() => {
+    console.log('BaseMatchCard: Force render triggered, refreshing component state');
+    // Force re-animation of score when forceRender changes
+    const scoreTarget = match?.score ? Math.round(match.score) : 0;
+    setAnimatedScore(scoreTarget);
+  }, [forceRender, match?.score]);
   
   // Enhanced toggle details with animation management
   const toggleDetails = () => {
@@ -331,7 +349,7 @@ const BaseMatchCard = ({
               getSubcategoryIcon(categoryKey, subcategoryKey) || getCategoryIcon(categoryKey)
             ) : null}
             
-            <h3 className="text-lg font-medium text-gray-900 truncate max-w-[200px]">
+            <h3 className="text-lg font-medium text-gray-900">
               {match.item.title || 'Sans titre'}
             </h3>
             
