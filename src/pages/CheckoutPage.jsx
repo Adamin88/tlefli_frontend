@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import PaymentButton from '../components/PaymentButton';
-import { getItemPaymentStatus } from '../services/itemsService';
+import CheckoutPaymentForm from '../components/CheckoutPaymentForm';
+import { getItemPaymentStatus } from '../services/checkoutService';
 import authService from '../services/authService';
-import toast from '../components/Toast';
+import toast from 'react-hot-toast';
 
 const CheckoutPage = () => {
   const [item, setItem] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
+  const [deliveryOption, setDeliveryOption] = useState(false);
+  const [isBusinessItem, setIsBusinessItem] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -49,32 +51,46 @@ const CheckoutPage = () => {
         decodedItem.amount = 3.00;
         decodedItem.currency = 'EUR';
         
+        // Check if this is a business-reported item for delivery option
+        const isBusinessReported = decodedItem.userType === 'business';
+        setIsBusinessItem(isBusinessReported);
+        
         setItem(decodedItem);
         
         // Fetch latest payment status
         if (decodedItem.id) {
           console.log('Fetching payment status for item:', decodedItem.id);
-          const paymentStatusResponse = await getItemPaymentStatus(decodedItem.id);
-          
-          if (paymentStatusResponse.success) {
-            console.log('Payment status received:', paymentStatusResponse.paymentStatus);
-            setPaymentStatus(paymentStatusResponse.paymentStatus);
+          try {
+            const paymentStatusResponse = await getItemPaymentStatus(decodedItem.id);
             
-            // Redirect back if already paid
-            if (paymentStatusResponse.paymentStatus?.paid) {
-              toast.success('Cet objet a déjà été payé');
-              navigate(`/items/${decodedItem.id}`);
-              return;
+            if (paymentStatusResponse.success) {
+              console.log('Payment status received:', paymentStatusResponse.paymentStatus);
+              setPaymentStatus(paymentStatusResponse.paymentStatus);
+              
+              // Redirect back if already paid
+              if (paymentStatusResponse.paymentStatus?.paid) {
+                toast.success('Cet objet a déjà été payé');
+                navigate(`/items/${decodedItem.id}`);
+                return;
+              }
+              
+              // Force amount to always be 3.00 EUR
+              setItem(prev => ({
+                ...prev,
+                amount: 3.00,
+                currency: 'EUR'
+              }));
+              
+              // Keep the initial business status detection since we already checked the decoded item
+              // No need to recheck since the payment status call doesn't change the reportedBy info
+            } else {
+              console.warn('Failed to fetch payment status:', paymentStatusResponse.error);
+              // Continue anyway - payment status is not critical for showing delivery options
             }
-            
-            // Force amount to always be 3.00 EUR
-            setItem(prev => ({
-              ...prev,
-              amount: 3.00,
-              currency: 'EUR'
-            }));
-          } else {
-            console.warn('Failed to fetch payment status:', paymentStatusResponse.error);
+          } catch (paymentError) {
+            console.warn('Error fetching payment status:', paymentError);
+            // Continue anyway - we can still show the checkout page without payment status
+            // The business user detection should still work based on the decoded item data
           }
         }
       } catch (err) {
@@ -90,11 +106,28 @@ const CheckoutPage = () => {
 
   const handlePaymentSuccess = (paymentResult) => {
     console.log('Payment successful:', paymentResult);
-    toast.success('Paiement réussi ! Vous allez être redirigé...');
+    
+    // Show success message with more details
+    toast.success('Paiement réussi ! L\'objet a été réclamé avec succès. Redirection en cours...');
+    
+    // Store payment result for potential use
+    sessionStorage.setItem('lastPaymentResult', JSON.stringify({
+      paymentId: paymentResult.paymentId,
+      itemId: item.id,
+      timestamp: new Date().toISOString(),
+      success: true
+    }));
     
     // Redirect back to item page after successful payment
+    // The item page will show the updated status
     setTimeout(() => {
-      navigate(`/items/${item.id}`);
+      navigate(`/claimed-items`, { 
+        state: { 
+          paymentCompleted: true,
+          shouldRefresh: true,
+          message: 'Paiement complété avec succès ! L\'objet a été réclamé.'
+        }
+      });
     }, 2000);
   };
 
@@ -147,6 +180,64 @@ const CheckoutPage = () => {
             </div>
           </div>
           
+          {/* Delivery Options - Only for business-reported items */}
+          {isBusinessItem && (
+            <div className="px-6 py-4 border-b">
+              <h2 className="text-lg font-medium text-gray-900">Options de livraison</h2>
+              <div className="mt-2 mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      Objet reporté par un professionnel
+                    </h3>
+                    <div className="mt-1 text-sm text-blue-700">
+                      <p>Cet objet a été trouvé par un professionnel. Vous pouvez choisir de le récupérer en magasin ou opter pour une livraison à domicile.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center">
+                  <input
+                    id="pickup"
+                    name="delivery_option"
+                    type="radio"
+                    checked={!deliveryOption}
+                    onChange={() => setDeliveryOption(false)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="pickup" className="ml-3 text-sm text-gray-700">
+                    <div>
+                      <div className="font-medium">Récupération en magasin</div>
+                      <div className="text-gray-500">Gratuit - Récupérez votre objet directement en magasin</div>
+                    </div>
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="delivery"
+                    name="delivery_option"
+                    type="radio"
+                    checked={deliveryOption}
+                    onChange={() => setDeliveryOption(true)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="delivery" className="ml-3 text-sm text-gray-700">
+                    <div>
+                      <div className="font-medium">Livraison à domicile</div>
+                      <div className="text-gray-500">4,00 EUR - Livraison directement à votre adresse</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Payment details */}
           <div className="px-6 py-4 border-b">
             <h2 className="text-lg font-medium text-gray-900">Détails du paiement</h2>
@@ -177,21 +268,29 @@ const CheckoutPage = () => {
                 <span>Frais de réclamation:</span>
                 <span className="font-medium">{item.amount} {item.currency}</span>
               </div>
+              {isBusinessItem && deliveryOption && (
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Frais de livraison:</span>
+                  <span className="font-medium">4,00 {item.currency}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
                 <span className="font-medium">Total:</span>
-                <span className="font-bold">{item.amount} {item.currency}</span>
+                <span className="font-bold">
+                  {(item.amount + (isBusinessItem && deliveryOption ? 4 : 0)).toFixed(2)} {item.currency}
+                </span>
               </div>
             </div>
           </div>
           
-          {/* Payment Button */}
+          {/* Payment Form - Direct display */}
           <div className="px-6 py-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Procéder au paiement</h2>
-            <PaymentButton 
+            <CheckoutPaymentForm 
               itemId={item.id}
-              amount={item.amount}
+              amount={item.amount + (isBusinessItem && deliveryOption ? 4 : 0)}
               currency={item.currency}
               onSuccess={handlePaymentSuccess}
+              deliveryOption={isBusinessItem ? deliveryOption : false}
             />
           </div>
           

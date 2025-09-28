@@ -486,6 +486,8 @@ const LocationField = ({
     // Update city if provided from map
     if (newLocation.city && newLocation.city !== city) {
       setCity(newLocation.city);
+      setTempCityInput(newLocation.city); // Update the input field display
+      setCitySelectedFromSuggestion(true); // Mark as selected from suggestion
     }
     
     // Ensure we don't add zoom instructions unless specifically requested
@@ -506,6 +508,8 @@ const LocationField = ({
   const handleMapCitySelect = (cityName) => {
     if (!updatingFromMap && cityName !== city) {
       setCity(cityName);
+      setTempCityInput(cityName); // Update the input field display
+      setCitySelectedFromSuggestion(true); // Mark as selected from suggestion
     }
   };
   
@@ -649,7 +653,7 @@ const LocationField = ({
           {/* City Selection with clear button */}
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">Ville *</label>
-            <div className="flex items-center relative">
+            <div className="flex items-center">
               <FaCity className="absolute left-3 text-yellow-500" />
               <ModernInput
                 type="text"

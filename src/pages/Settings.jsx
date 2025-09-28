@@ -232,7 +232,7 @@ export default function Settings() {
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e',
+    avatar: '',
     firstName: '',
     lastName: '',
     address: '',
@@ -276,7 +276,8 @@ export default function Settings() {
         firstName: user.userType === 'individual' ? (user.firstName || '') : '',
         lastName: user.userType === 'individual' ? (user.lastName || '') : '',
         phone: user.phone || '',
-        
+        avatar: user.avatar || '',
+
         // Very explicitly handle the address field with fallbacks
         address: user.userType === 'individual' 
           ? (user.address !== undefined ? user.address : '')

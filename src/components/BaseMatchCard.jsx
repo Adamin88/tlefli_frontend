@@ -134,9 +134,9 @@ const BaseMatchCard = ({
   // Modern status badges with meaningful colors
   const statusBadges = {
     posted: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Publié' },
-    authenticating: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'En authentification' },
+    authenticating: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'En vérification' },
     authenticated: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Authentifié' },
-    returning: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'En retour' },
+    returning: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'En restitution' },
     returned: { bg: 'bg-green-100', text: 'text-green-800', label: 'Retourné' }
   };
 
@@ -425,7 +425,7 @@ const BaseMatchCard = ({
                   <div className="flex items-start">
                     <MapPinIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5 mr-2" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-700">Emplacement</p>
+                      <p className="text-sm font-medium text-gray-700">Lieu de perte</p>
                       <p className="text-sm text-gray-600">
                         {match.item.location?.address || match.item.location?.name || 'Emplacement non spécifié'}
                       </p>

@@ -1031,7 +1031,7 @@ const Login = () => {
                     className="w-full flex items-center justify-center py-3 px-5 
                            rounded-xl text-sm font-medium text-gray-700 
                            bg-white hover:bg-gray-50 focus:outline-none 
-                           shadow-lg hover:shadow-xl transition-all duration-300
+                           shadow-lg hover:shadow-xl transition-all duration-700
                            border border-gray-300 hover:border-yellow-300
                            relative overflow-hidden group"
                   >
@@ -1059,19 +1059,6 @@ const Login = () => {
                     <EnvelopeIcon className="h-5 w-5 mr-2" />
                     <span className="text-sm">Se connecter avec Email</span>
                   </motion.button>
-
-                  {/* Security notice */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="mt-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200 p-3 shadow-sm"
-                  >
-                    <div className="flex items-center justify-center mb-1">
-                      <LockClosedIcon className="h-4 w-4 text-yellow-600 mr-1.5" />
-                      <h3 className="font-semibold text-yellow-800 text-xs">Connexion sécurisée</h3>
-                    </div>
-                  </motion.div>
                 </motion.div>
               ) : loginMethod === 'email' ? (
                 /* Email Login Form */

@@ -1219,7 +1219,7 @@ const renderSecretQuestionContent = () => {
   }
 
   // For authenticated items, proceed with normal display
-  if (match.item.status === 'authenticated') {
+  if (match.item.status === 'authenticated' || match.item.status === 'returning') {
     // Check if user can claim based on correct answer
     const canUserClaim = match.item.secretAnswers?.some(answer => 
       answer.user?._id === currentUser?._id && 
@@ -1271,7 +1271,12 @@ const renderSecretQuestionContent = () => {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-green-800">Objet authentifié</h3>
                 <div className="mt-2 text-sm text-green-700">
-                  <p>Cet objet a été authentifié et est en cours de retour à son propriétaire.</p>
+                  <p>
+                    {match.item.status === 'returning' 
+                      ? 'Cet objet est en cours de restitution à son propriétaire.'
+                      : 'Cet objet a été authentifié et est en cours de retour à son propriétaire.'
+                    }
+                  </p>
                 </div>
               </div>
             </div>
@@ -1390,7 +1395,8 @@ const renderSecretQuestionContent = () => {
 
   // Add new function to render payment section
   const renderPaymentSection = () => {
-    if (!match.item.status === 'authenticated') return null;
+    // Show payment section for both 'authenticated' and 'returning' status
+    if (match.item.status !== 'authenticated' && match.item.status !== 'returning') return null;
     
     // If payment status is loading
     if (isLoadingPaymentStatus) {
@@ -1398,7 +1404,7 @@ const renderSecretQuestionContent = () => {
         <div className="mt-4 bg-white p-4 rounded-md border border-gray-200 flex items-center justify-center">
           <svg className="animate-spin h-5 w-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           <span className="text-gray-700">Chargement des informations de paiement...</span>
         </div>
@@ -1416,7 +1422,13 @@ const renderSecretQuestionContent = () => {
             <div className="ml-3">
               <h3 className="text-sm font-medium text-green-800">Frais de réclamation payés</h3>
               <div className="mt-2 text-sm text-green-700">
-                <p>Vous avez payé les frais de réclamation de {paymentStatus.amount} {paymentStatus.currency} le {new Date(paymentStatus.paidAt).toLocaleDateString('fr-FR')}.</p>
+                <p>Vous avez payé les frais de réclamation de {paymentStatus.amount} {paymentStatus.currency} le {new Date(paymentStatus.paidAt).toLocaleDateString('fr-FR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}.</p>
                 <p className="mt-2">L'objet est maintenant en cours de restitution.</p>
               </div>
             </div>
@@ -1485,7 +1497,9 @@ const renderSecretQuestionContent = () => {
       reference: item.reference || itemReference || `REF-${item._id.substring(0, 8)}`,
       amount: paymentStatus?.amount || 3,
       currency: paymentStatus?.currency || 'EUR',
-      status: item.status
+      status: item.status,
+      userType: item.userType || 'individual', // Use the item's userType property
+      reportedBy: item.reportedBy // Include the user information for backward compatibility
     };
     
     console.log('Checkout data:', checkoutData);
@@ -1597,7 +1611,7 @@ const renderSecretQuestionForm = () => {
   );
 
   const fetchPaymentStatus = useCallback(async () => {
-    if (!match?.item?._id || match.item.status !== 'authenticated') return;
+    if (!match?.item?._id || (match.item.status !== 'authenticated' && match.item.status !== 'returning')) return;
     
     try {
       setIsLoadingPaymentStatus(true);
@@ -1615,7 +1629,7 @@ const renderSecretQuestionForm = () => {
   }, [match?.item?._id, match?.item?.status]);
 
   useEffect(() => {
-    if (match?.item?.status === 'authenticated') {
+    if (match?.item?.status === 'authenticated' || match?.item?.status === 'returning') {
       fetchPaymentStatus();
     }
   }, [match?.item?.status, fetchPaymentStatus]);

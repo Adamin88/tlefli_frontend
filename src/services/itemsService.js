@@ -978,10 +978,10 @@ class ItemsService {
     }
   }
 
-  // Create a payment for an item
+  // Create a payment for an item using Checkout.com
   async createItemPayment(itemId, data) {
     try {
-      console.log(`Creating payment for item ${itemId} with data:`, data);
+      console.log(`Creating Checkout.com payment for item ${itemId} with data:`, data);
       
       if (!itemId) {
         throw new Error('Item ID is required');
@@ -1028,13 +1028,13 @@ class ItemsService {
     }
   }
 
-  // Capture a payment after approval
-  async capturePayment(orderId) {
+  // Verify a payment with Checkout.com
+  async verifyPayment(paymentId) {
     try {
-      const response = await api.post(`/payments/capture/${orderId}`);
+      const response = await api.post(`/payments/verify/${paymentId}`);
       return response.data;
     } catch (error) {
-      console.error('Error capturing payment:', error);
+      console.error('Error verifying payment:', error);
       throw error;
     }
   }
@@ -1047,6 +1047,67 @@ class ItemsService {
     } catch (error) {
       console.error('Error marking item as returning:', error);
       throw error;
+    }
+  }
+
+  // Get claimed items (items in 'returning' status)
+  async getClaimedItems() {
+    try {
+      console.log('Fetching claimed items...');
+      const response = await api.get('/items/claimed/items');
+      
+      return {
+        success: true,
+        data: response.data.data || [],
+        count: response.data.count || 0
+      };
+    } catch (error) {
+      console.error('Error fetching claimed items:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to fetch claimed items',
+        data: []
+      };
+    }
+  }
+
+  // Set return deadline for an item
+  async setReturnDeadline(itemId, deadline) {
+    try {
+      console.log(`Setting return deadline for item ${itemId}:`, deadline);
+      const response = await api.put(`/items/${itemId}/return-deadline`, {
+        deadline: deadline
+      });
+      
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('Error setting return deadline:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to set return deadline'
+      };
+    }
+  }
+
+  // Remove return deadline from an item
+  async removeReturnDeadline(itemId) {
+    try {
+      console.log(`Removing return deadline for item ${itemId}`);
+      const response = await api.delete(`/items/${itemId}/return-deadline`);
+      
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('Error removing return deadline:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to remove return deadline'
+      };
     }
   }
 }

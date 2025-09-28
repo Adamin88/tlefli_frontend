@@ -358,7 +358,7 @@ export default function ReportItem() {
     reward: {
       offered: false,
       amount: 0,
-      currency: 'EUR',
+      currency: 'MAD',
       description: ''
     },
     hasReward: false,
@@ -551,7 +551,7 @@ export default function ReportItem() {
         status: 'posted',
         reward: formData.hasReward ? {
           amount: parseFloat(formData.reward.amount) || 0,
-          currency: formData.reward.currency || 'EUR',
+          currency: formData.reward.currency || 'MAD',
           description: formData.reward.description?.trim() || ''
         } : null,
         secretQuestion: formData.type === 'found' ? {
@@ -559,7 +559,9 @@ export default function ReportItem() {
           answer: formData.secretQuestion.answer.trim()
         } : null,
         // Add user information explicitly with fallbacks
-        reportedBy: user?._id || user?.id || user?.uid
+        reportedBy: user?._id || user?.id || user?.uid,
+        // Include userType from the authenticated user
+        userType: user?.userType || 'individual'
       };
 
       console.log("Submitting item data:", JSON.stringify(itemData, null, 2));
@@ -1216,7 +1218,7 @@ export default function ReportItem() {
                       onChange={() => setFormData(prev => ({
                         ...prev,
                         hasReward: !prev.hasReward,
-                        reward: !prev.hasReward ? { amount: 0, currency: 'EUR' } : null
+                        reward: !prev.hasReward ? { amount: 0, currency: '' } : null
                       }))}
                     />
                     <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-300 rounded-full peer dark:bg-gray-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
@@ -1236,8 +1238,9 @@ export default function ReportItem() {
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span className="text-gray-500">
-                              {formData.reward?.currency === 'EUR' ? '€' :
-                                formData.reward?.currency === 'USD' ? '$' :
+                              {formData.reward?.currency === 'MAD' ? 'DH' :
+                                formData.reward?.currency === 'EUR' ? '€' :
+                                 formData.reward?.currency === 'USD' ? '$' :
                                   formData.reward?.currency === 'GBP' ? '£' : ''}
                             </span>
                           </div>
@@ -1245,7 +1248,7 @@ export default function ReportItem() {
                             type="number"
                             min="0"
                             step="0.01"
-                            className={`w-full pl-8 pr-4 py-2.5 rounded-lg focus:ring-2 transition-all duration-300 ${formData.reward?.amount < 0
+                            className={`w-full pl-9 pr-4  py-2.5 rounded-lg focus:ring-2 transition-all duration-300 ${formData.reward?.amount < 0
                                 ? 'border-red-300 focus:ring-red-500'
                                 : 'border border-gray-300 focus:ring-yellow-400 focus:border-yellow-400'
                               }`}
@@ -1283,7 +1286,7 @@ export default function ReportItem() {
                             backgroundPosition: "right 0.75rem center",
                             backgroundSize: "1.5em 1.5em"
                           }}
-                          value={formData.reward?.currency || 'EUR'}
+                          value={formData.reward?.currency || 'MAD'}
                           onChange={(e) => setFormData(prev => ({
                             ...prev,
                             reward: {
@@ -1293,6 +1296,7 @@ export default function ReportItem() {
                           }))}
                           required={formData.hasReward}
                         >
+                          <option value="MAD">Dirham (MAD)</option>
                           <option value="EUR">Euro (EUR)</option>
                           <option value="USD">Dollar (USD)</option>
                           <option value="GBP">Livre Sterling (GBP)</option>

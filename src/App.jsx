@@ -21,6 +21,7 @@ import CompleteBusinessProfile from './pages/CompleteBusinessProfile';
 import QRScannerPage from './pages/QRScannerPage';
 import VerifyItemPage from './pages/VerifyItemPage';
 import CheckoutPage from './pages/CheckoutPage';
+import ClaimedItems from './pages/ClaimedItems';
 import { UNSAFE_NavigationContext as NavigationContext } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -228,6 +229,7 @@ function App() {
                 <Route path="/items/:id" element={<ItemDetails />} />
                 <Route path="/items/:id/edit" element={<EditItem />} />
                 <Route path="/report" element={<ReportItem />} />
+                <Route path="/claimed-items" element={<ClaimedItems />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />

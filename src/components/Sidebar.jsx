@@ -1,35 +1,47 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotifications } from '../contexts/NotificationsContext'
+import itemsService from '../services/itemsService'
 import {
-  HomeIcon,
-  FolderIcon,
-  DocumentPlusIcon,
+  
   UserGroupIcon,
-  Cog6ToothIcon,
+
   ArrowLeftOnRectangleIcon,
   // Removed XMarkIcon import
   ChartBarIcon,
-  BellIcon,
-  PresentationChartBarIcon,
-  Bars3Icon,
+  
   ChevronLeftIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 
-const getNavigation = (isAdmin, unreadCount, userType) => {
+import { TbLayoutDashboardFilled, TbPresentationAnalyticsFilled } from "react-icons/tb";
+import { HiQueueList } from "react-icons/hi2";
+import { MdVerifiedUser, MdNotifications, MdManageAccounts} from "react-icons/md";
+import { FaPlus } from "react-icons/fa";
+
+
+
+
+
+const getNavigation = (isAdmin, unreadCount, userType, claimedCount) => {
   const baseNavigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Vos objets', href: '/items', icon: FolderIcon },
-    { name: 'Déclarer un objet', href: '/report', icon: DocumentPlusIcon },
+    { name: 'Dashboard', href: '/dashboard', icon: TbLayoutDashboardFilled },
+    { name: 'Vos objets', href: '/items', icon: HiQueueList },
+    { 
+      name: 'Objets validés', 
+      href: '/claimed-items', 
+      icon: MdVerifiedUser,
+      badge: claimedCount > 0 ? claimedCount : null
+    },
+    { name: 'Déclarer un objet', href: '/report', icon: FaPlus },
     { 
       name: 'Notifications', 
       href: '/notifications', 
-      icon: BellIcon,
+      icon: MdNotifications,
       badge: unreadCount > 0 ? unreadCount : null 
     },
-    { name: 'Mon compte', href: '/settings', icon: Cog6ToothIcon },
+    { name: 'Mon compte', href: '/settings', icon: MdManageAccounts },
   ]
 
   // Add Analytics tab for business users
@@ -37,7 +49,7 @@ const getNavigation = (isAdmin, unreadCount, userType) => {
     baseNavigation.splice(1, 0, { 
       name: 'Analytics', 
       href: '/analytics', 
-      icon: PresentationChartBarIcon 
+      icon: TbPresentationAnalyticsFilled
     });
   }
 
@@ -56,7 +68,49 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onCollapseToggle
   const notifications = useNotifications();
   const unreadCount = notifications?.unreadCount || 0;
   const isAdmin = user?.role === 'admin';
-  const navigation = getNavigation(isAdmin, unreadCount, user?.userType);
+
+  // Claimed items count state
+  const [claimedCount, setClaimedCount] = useState(0);
+
+  // Fetch claimed (paid) items count for the user
+  useEffect(() => {
+    let ignore = false;
+    async function fetchClaimedCount() {
+      if (!user) return;
+      try {
+        // Use the itemsService to get claimed items count
+        const response = await itemsService.getClaimedItems();
+        if (!ignore && response && response.success) {
+          setClaimedCount(response.count || 0);
+        }
+      } catch (e) {
+        console.error('Error fetching claimed items count:', e);
+        if (!ignore) setClaimedCount(0);
+      }
+    }
+    fetchClaimedCount();
+    return () => { ignore = true; };
+  }, [user]);
+
+  // Refresh claimed count when location changes (useful when navigating to/from claimed-items)
+  useEffect(() => {
+    if (user && location.pathname !== '/claimed-items') {
+      // Small delay to allow any updates to complete
+      const timer = setTimeout(async () => {
+        try {
+          const response = await itemsService.getClaimedItems();
+          if (response && response.success) {
+            setClaimedCount(response.count || 0);
+          }
+        } catch (e) {
+          console.error('Error refreshing claimed items count:', e);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, user]);
+
+  const navigation = getNavigation(isAdmin, unreadCount, user?.userType, claimedCount);
   
   // Use the prop for collapsed state instead of local state
   const collapsed = isCollapsed;
@@ -219,7 +273,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onCollapseToggle
         className={`fixed inset-y-0 left-0 z-40 
           ${isMobile ? 'w-80' : collapsed ? 'w-16' : 'w-64'} 
           ${isMobile ? 'max-w-[85vw]' : ''} 
-          bg-gradient-to-b from-gray-50 via-white to-gray-50 shadow-xl 
+          bg-gradient-to-b from-gray-50 via-white to-gray-50 shadow-xl
           transform transition-all duration-300 ease-in-out 
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
           md:translate-x-0
@@ -251,7 +305,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onCollapseToggle
           {/* Desktop collapse button - improved positioning and manual control */}
           {!isMobile && (
             <button
-              className={`absolute ${collapsed ? '-right-3' : '-right-3'} top-20 bg-white rounded-full p-1.5 shadow-lg text-gray-400 hover:text-yellow-600 hover:shadow-xl active:scale-95 transition-all duration-200 z-50 border border-gray-200`}
+              className={`absolute ${collapsed ? '-right-3' : '-right-3'} top-16 bg-white rounded-full p-1.5 shadow-lg text-gray-400 hover:text-yellow-600 hover:shadow-xl active:scale-95 transition-all duration-200 z-50 border border-gray-200`}
               onClick={handleManualToggle}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -280,7 +334,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onCollapseToggle
               {(!collapsed || isMobile) && (
                 <div className="ml-3 overflow-hidden">
                   <p className={`${isMobile ? 'text-base' : 'text-sm'} font-medium text-gray-700 truncate`}>
-                    {user?.userType === 'business' 
+                    {user?.userType === 'business'
                       ? user?.businessName || user?.name || user?.email
                       : (user?.firstName && user?.lastName) 
                         ? `${user.firstName} ${user.lastName}` 
@@ -288,7 +342,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onCollapseToggle
                     }
                   </p>
                   <p className={`${isMobile ? 'text-sm' : 'text-xs'} capitalize ${getUserTypeColor(user?.userType)}`}>
-                    {user?.role === 'admin' ? 'Administrator' : user?.userType || 'User'}
+                    {user?.role === 'admin' ? 'Administrator' : user?.userType === 'business' ? 'Pro' : user?.userType || 'User'}
                   </p>
                 </div>
               )}
@@ -389,7 +443,9 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onCollapseToggle
           {/* Version number - enhanced for mobile */}
           {(!collapsed || isMobile) && (
             <div className={`${isMobile ? 'px-4 py-3' : 'px-4 py-2'} text-center ${isMobile ? 'text-sm' : 'text-xs'} text-gray-400`}>
-              v1.2.0
+              <p className="text-xs leading-5 text-gray-500">
+                 &copy; {new Date().getFullYear()} TLEFLI
+              </p>
             </div>
           )}
         </div>
@@ -465,3 +521,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onCollapseToggle
     </>
   )
 }
+
+// No changes needed here unless you handle routes in this file.
+// Make sure to add the route in your main App or Router file:
+// <Route path="/claimed-items" element={<ClaimedItems />} />

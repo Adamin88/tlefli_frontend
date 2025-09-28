@@ -1,309 +1,42 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { loadScript } from "@paypal/paypal-js";
-import { createItemPayment, capturePayment } from '../services/itemsService';
+import React, { useState } from 'react';
+import CheckoutPaymentForm from './CheckoutPaymentForm';
 import authService from '../services/authService';
-import toast from './Toast/index';
+import toast from 'react-hot-toast';
 
 const PaymentButton = ({ itemId, amount, currency, onSuccess }) => {
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [error, setError] = useState(null);
-  const paypalButtonRef = useRef(null);
-  const paypalInstance = useRef(null);
-  const buttonInstance = useRef(null);
-  const scriptPromise = useRef(null);
-  const isMounted = useRef(true);
-  const renderAttempted = useRef(false);
-  
-  // Track component mount status to prevent state updates after unmount
-  useEffect(() => {
-    isMounted.current = true;
-    renderAttempted.current = false;
-    
-    return () => {
-      isMounted.current = false;
-      
-      // Ensure any button instances are properly closed
-      if (buttonInstance.current) {
-        try {
-          console.log('Cleaning up PayPal button instance on unmount');
-          if (typeof buttonInstance.current.close === 'function') {
-            buttonInstance.current.close();
-          }
-        } catch (err) {
-          console.log('Non-critical error during button cleanup:', err);
-        }
-        buttonInstance.current = null;
-      }
-    };
-  }, []);
 
-  // Separate PayPal loading function
-  const loadPayPalScript = () => {
-    console.log('Loading PayPal script with client ID:', import.meta.env.VITE_PAYPAL_CLIENT_ID);
-    
-    // Determine environment based on URL or environment variable
+  // Handle showing payment form
+  const handleShowPaymentForm = () => {
+    // Check authentication for production
     const isProduction = window.location.hostname === 'tlefli.ma' || 
-                        import.meta.env.VITE_ENVIRONMENT === 'production';
+                       import.meta.env.VITE_ENVIRONMENT === 'production';
     
-    const scriptConfig = {
-      "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID,
-      currency: currency || "EUR",
-      components: "buttons,marks",
-      "enable-funding": "card",
-      "disable-funding": "paylater,venmo,sepa,bancontact",
-      debug: !isProduction // Enable debug only in non-production
-    };
+    if (isProduction && !authService.getToken()) {
+      setError('Veuillez vous connecter pour effectuer un paiement');
+      toast.error('Authentification requise');
+      return;
+    }
     
-    console.log(`Loading PayPal script for ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} environment`);
-    
-    loadScript(scriptConfig)
-    .then(paypal => {
-      if (isMounted.current) {
-        console.log('PayPal script loaded successfully');
-        paypalInstance.current = paypal;
-        setIsScriptLoaded(true);
-      }
-    })
-    .catch(err => {
-      console.error("Failed to load PayPal SDK:", err);
-      if (isMounted.current) {
-        setError("Error loading PayPal");
-      }
-    });
+    setError(null);
+    setShowPaymentForm(true);
   };
 
-  // Load PayPal script only once
-  useEffect(() => {
-    if (isScriptLoaded || isProcessingPayment || scriptPromise.current) {
-      return;
+  // Handle payment success
+  const handlePaymentSuccess = (paymentResult) => {
+    console.log('Payment successful:', paymentResult);
+    setShowPaymentForm(false);
+    
+    if (onSuccess) {
+      onSuccess(paymentResult);
     }
-    
-    scriptPromise.current = true; // Mark as loading
-    loadPayPalScript();
-    
-    return () => {
-      // Just log cleanup
-      console.log('Cleaning up PayPal script loading effect');
-    };
-  }, [currency, isScriptLoaded, isProcessingPayment, itemId, amount]);
+  };
 
-  // Render PayPal buttons with a delay to ensure container is ready
-  useEffect(() => {
-    // Clear any previous render attempts when dependencies change
-    renderAttempted.current = false;
-    
-    // Only proceed if all conditions are met
-    if (!isScriptLoaded || !paypalButtonRef.current || !paypalInstance.current || isProcessingPayment || renderAttempted.current) {
-      return;
-    }
-
-    // Set a small delay to ensure DOM is ready
-    const renderTimeout = setTimeout(() => {
-      renderButtons();
-    }, 100);
-    
-    // Cleanup function
-    return () => {
-      clearTimeout(renderTimeout);
-    };
-  }, [isScriptLoaded, itemId, onSuccess, isProcessingPayment]);
-
-  // Separate the button rendering logic to its own function
-  const renderButtons = async () => {
-    // Guard against multiple render attempts
-    if (renderAttempted.current || !isMounted.current) return;
-    renderAttempted.current = true;
-    
-    try {
-      // Clear the container first
-      const buttonContainer = paypalButtonRef.current;
-      if (!buttonContainer) {
-        console.error('Button container not found');
-        return;
-      }
-      
-      buttonContainer.innerHTML = '';
-      console.log('Cleared button container, rendering PayPal buttons');
-      
-      // Create the button instance
-      buttonInstance.current = paypalInstance.current.Buttons({
-        style: {
-          layout: 'vertical',
-          color: 'blue',
-          shape: 'rect',
-          label: 'pay'
-        },
-        
-        // Create order
-        createOrder: async () => {
-          if (!isMounted.current) {
-            throw new Error('Component unmounted');
-          }
-          
-          try {
-            setIsProcessingPayment(true);
-            setError(null);
-            
-            // Validate item ID
-            if (!itemId) {
-              const errorMsg = 'Item ID is required for payment processing';
-              console.error(errorMsg);
-              toast.error('Erreur: ID de l\'objet manquant');
-              throw new Error(errorMsg);
-            }
-            
-            console.log('Creating payment for item:', itemId);
-            
-            // Always use 3.00 for amount and EUR for currency
-            const fixedAmount = 3.00;
-            const fixedCurrency = 'EUR';
-            
-            // Check if user is authenticated
-            const token = authService.getToken();
-            const isProduction = window.location.hostname === 'tlefli.ma' || 
-                               import.meta.env.VITE_ENVIRONMENT === 'production';
-            
-            if (!token) {
-              console.warn('User is not authenticated for payment');
-              if (isProduction) {
-                const errorMsg = 'Authentification requise pour effectuer un paiement';
-                toast.error(errorMsg);
-                throw new Error(errorMsg);
-              }
-              // In development, we continue anyway as backend might allow payment
-            }
-            
-            const currentUrl = window.location.href;
-            const baseUrl = currentUrl.split('/').slice(0, 3).join('/');
-            const returnUrl = `${baseUrl}/profile/items`;
-            const cancelUrl = window.location.href;
-            
-            console.log('Return URL:', returnUrl);
-            console.log('Cancel URL:', cancelUrl);
-            
-            // Create the order on the backend using the exported function
-            const response = await createItemPayment(itemId, {
-              returnUrl,
-              cancelUrl
-            });
-            
-            if (!response.success) {
-              console.error('Payment creation failed:', response);
-              throw new Error(response.message || "Erreur lors de la création du paiement");
-            }
-            
-            console.log('Payment created successfully:', response.payment.id);
-            return response.payment.id;
-          } catch (err) {
-            console.error("Error creating PayPal order:", err);
-            if (isMounted.current) {
-              let errorMsg = 'Une erreur est survenue lors de la création du paiement.';
-              
-              // Try to extract more specific error message
-              if (err.response?.data?.message) {
-                errorMsg = err.response.data.message;
-              } else if (err.response?.data?.error) {
-                errorMsg = err.response.data.error;
-              } else if (err.message) {
-                errorMsg = err.message;
-              }
-              
-              setError(errorMsg);
-              setIsProcessingPayment(false);
-              toast.error(errorMsg);
-            }
-            throw err;
-          }
-        },
-        
-        // Handle approval
-        onApprove: async (data) => {
-          if (!isMounted.current) return false;
-          
-          try {
-            console.log('Payment approved, capturing payment:', data.orderID);
-            console.log('For item:', itemId);
-            
-            // Capture the payment on the server using the exported function
-            const captureResult = await capturePayment(data.orderID);
-            
-            if (!captureResult.success) {
-              throw new Error(captureResult.message || "Erreur lors de la capture du paiement");
-            }
-            
-            console.log('Payment captured successfully:', captureResult);
-            
-            // Call the success callback if component is still mounted
-            if (isMounted.current && onSuccess) {
-              await onSuccess({
-                ...captureResult,
-                itemId: itemId,
-                orderId: data.orderID
-              });
-            }
-            
-            return true;
-          } catch (err) {
-            console.error("Error capturing payment:", err);
-            if (isMounted.current) {
-              const errorMsg = err.response?.data?.message || 
-                            "Erreur lors de la finalisation du paiement. Veuillez contacter le support.";
-              setError(errorMsg);
-              toast.error(errorMsg);
-            }
-            return false;
-          } finally {
-            if (isMounted.current) {
-              setIsProcessingPayment(false);
-            }
-          }
-        },
-        
-        // Handle cancel
-        onCancel: () => {
-          console.log('Payment cancelled by user');
-          if (isMounted.current) {
-            setIsProcessingPayment(false);
-            toast.info("Paiement annulé");
-          }
-        },
-        
-        // Handle errors
-        onError: (err) => {
-          console.error("PayPal error:", err);
-          if (isMounted.current) {
-            setError("Une erreur est survenue lors du traitement du paiement.");
-            setIsProcessingPayment(false);
-            toast.error("Une erreur est survenue lors du traitement du paiement.");
-          }
-        }
-      });
-      
-      // Only try to render if component is still mounted
-      if (isMounted.current && buttonContainer) {
-        try {
-          await buttonInstance.current.render(buttonContainer);
-          console.log('PayPal buttons rendered successfully');
-        } catch (renderError) {
-          if (renderError.message.includes('container element removed from DOM')) {
-            console.warn('PayPal container was removed before rendering completed');
-          } else if (renderError.message.includes('zoid destroyed')) {
-            console.warn('PayPal zoid was destroyed, possibly due to rapid navigation');
-          } else {
-            console.error('Error rendering PayPal buttons:', renderError);
-            if (isMounted.current) {
-              setError("Impossible d'afficher les boutons de paiement PayPal.");
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Error during PayPal button setup:", err);
-      if (isMounted.current) {
-        setError(`Erreur lors de l'initialisation de PayPal: ${err.message}`);
-      }
-    }
+  // Handle payment error
+  const handlePaymentError = (error) => {
+    console.error('Payment error:', error);
+    setError(error.message || 'Erreur lors du paiement');
   };
 
   if (error) {
@@ -312,7 +45,7 @@ const PaymentButton = ({ itemId, amount, currency, onSuccess }) => {
         <p className="text-sm text-red-700">{error}</p>
         <button 
           className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
-          onClick={() => window.location.reload()}
+          onClick={() => setError(null)}
         >
           Réessayer
         </button>
@@ -320,23 +53,56 @@ const PaymentButton = ({ itemId, amount, currency, onSuccess }) => {
     );
   }
 
+  if (showPaymentForm) {
+    return (
+      <div>
+        <div className="mb-4">
+          <button
+            onClick={() => setShowPaymentForm(false)}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            ← Retour
+          </button>
+        </div>
+        
+        <CheckoutPaymentForm
+          itemId={itemId}
+          amount={amount}
+          currency={currency}
+          onSuccess={handlePaymentSuccess}
+          onError={handlePaymentError}
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
-      {isProcessingPayment && (
-        <div className="flex items-center justify-center mb-4">
-          <svg className="animate-spin h-5 w-5 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-gray-700">Traitement du paiement...</span>
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">
+              Paiement sécurisé
+            </h3>
+            <div className="mt-1 text-sm text-blue-700">
+              <p>Montant: <span className="font-semibold">{amount} {currency}</span></p>
+              <p>Votre paiement sera traité de manière sécurisée via Checkout.com.</p>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
       
-      <div 
-        ref={paypalButtonRef}
-        id="paypal-button-container" 
-        className={`paypal-button-container min-h-[150px] ${isProcessingPayment ? 'opacity-50 pointer-events-none' : ''}`}
-      ></div>
+      <button
+        onClick={handleShowPaymentForm}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors"
+      >
+        Procéder au paiement
+      </button>
       
       <p className="mt-2 text-xs text-gray-500 text-center">
         En cliquant sur le bouton de paiement, vous acceptez nos conditions générales et notre politique de confidentialité.

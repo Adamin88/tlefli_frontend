@@ -152,7 +152,7 @@ export default function Dashboard() {
 
   return (
     <DashboardComponent
-      stats={stats}
+      stats={user.userType === 'business' ? stats : undefined}
       recentItems={recentItems}
       isLoading={isLoading}
       userType={user.userType}

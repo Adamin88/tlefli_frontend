@@ -26,11 +26,9 @@ export default function ItemCard({ item }) {
     status,
     date,
     location,
-    category,
     tags,
     type,
     images,
-    reportedBy,
     contact
   } = item;
 
@@ -69,7 +67,7 @@ export default function ItemCard({ item }) {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -95,9 +93,9 @@ export default function ItemCard({ item }) {
 
   return (
     <Link to={`/items/${_id}`} className="block">
-      <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      <div className={`bg-white rounded-lg shadow-lg hover:shadow-lg transition-shadow duration-300 overflow-hidden`}>
         {/* Image Section */}
-        <div className="aspect-w-16 aspect-h-9 relative">
+        <div className="aspect-w-16 aspect-h-9 relative shadow-md shadow-gray-600">
           {getMainImage() ? (
             <img
               src={getMainImage()}
@@ -109,7 +107,7 @@ export default function ItemCard({ item }) {
               <PhotoIcon className="h-12 w-12 text-gray-400" />
             </div>
           )}
-          <div className="absolute top-2 right-2">
+          <div className="absolute bottom-2 left-2">
             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColors[status]}`}>
               {getStatusIcon(status)}
               {statusLabels[status]}
@@ -119,7 +117,7 @@ export default function ItemCard({ item }) {
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeColors[type]}`}>
               {typeLabels[type]}
             </span>
-            <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <span className="px-2 py-1 rounded-full text-xs  bg-gray-100 text-gray-800">
               #{reference}
             </span>
           </div>

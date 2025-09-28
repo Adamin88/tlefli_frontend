@@ -579,16 +579,6 @@ export default function Register() {
                     {showEmailForm ? "Revenir aux options" : "S'inscrire avec Email"}
                   </span>
                 </button>
-
-                {/* Security notice - only show when not in email form */}
-                {!showEmailForm && (
-                  <div className="mt-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200 p-3 shadow-sm">
-                    <div className="flex items-center justify-center mb-1">
-                      <LockClosedIcon className="h-4 w-4 text-yellow-600 mr-1.5" />
-                      <h3 className="font-semibold text-yellow-800 text-xs">Inscription sécurisée</h3>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

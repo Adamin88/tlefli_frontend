@@ -1,7 +1,6 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, Transition } from '@headlessui/react';
 import {
   BuildingOfficeIcon,
   ShoppingBagIcon,
@@ -24,6 +23,10 @@ import {
   ArrowRightOnRectangleIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
+
+import { FaUser } from "react-icons/fa";
+import { CiLogin } from "react-icons/ci";
+
 import { useAuth } from '../contexts/AuthContext';
 import Hero from '../components/Hero';
 
@@ -128,6 +131,22 @@ function Header({ isScrolled, activeSection, scrollToSection }) {
   const { user, logout, isAuthenticated, refreshAuth } = useAuth();
   const navigate = useNavigate();
   const [authChecked, setAuthChecked] = React.useState(false);
+  const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+  const userMenuRef = React.useRef(null);
+  
+  // Close user menu when clicking outside
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   // Only refresh auth on mount and set flag when checked
   React.useEffect(() => {
@@ -165,82 +184,68 @@ function Header({ isScrolled, activeSection, scrollToSection }) {
   };
 
   const UserMenu = ({ mobile = false }) => (
-    <Menu as="div" className="relative">
-      <Menu.Button className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold ${mobile ? 'w-full' : 'rounded-xl hover:bg-gray-100'}`}>
+    <div className="relative" ref={userMenuRef}>
+      <button 
+        onClick={() => setUserMenuOpen(!userMenuOpen)}
+        className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold ${mobile ? 'w-full' : 'rounded-xl hover:bg-yellow-600/10'} transition-colors duration-200`}
+      >
         <div className="relative">
-          <UserCircleIcon className="h-6 w-6 text-gray-600" />
+          <FaUser className="h-6 w-6 text-gray-600" />
           {isAuthenticated && user && (
             <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
           )}
         </div>
         <span className="text-gray-700">
-          {isAuthenticated && user ? (user.firstName || user.email?.split('@')[0] || 'Profil') : 'Connexion'}
+          {isAuthenticated && user ? (user.firstName || user.businessName?.split('@')[0] || 'Profil') : 'Connexion'}
         </span>
-      </Menu.Button>
-      <Transition
-        as={Fragment}
-        enter="transition ease-out duration-100"
-        enterFrom="transform opacity-0 scale-95"
-        enterTo="transform opacity-100 scale-100"
-        leave="transition ease-in duration-75"
-        leaveFrom="transform opacity-100 scale-100"
-        leaveTo="transform opacity-0 scale-95"
-      >
-        <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-          {isAuthenticated && user ? (
-            <>
-              <Menu.Item>
-                {({ active }) => (
-                  <Link
-                    to="/dashboard"
-                    className={`${active ? 'bg-gray-50' : ''} flex items-center px-4 py-2 text-sm text-gray-700`}
-                  >
-                    <UserIcon className="mr-3 h-5 w-5" />
-                    Dashboard
-                  </Link>
-                )}
-              </Menu.Item>
-              <Menu.Item>
-                {({ active }) => (
-                  <button
-                    onClick={handleLogout}
-                    className={`${active ? 'bg-gray-50' : ''} flex w-full items-center px-4 py-2 text-sm text-gray-700`}
-                  >
-                    <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
-                    Déconnexion
-                  </button>
-                )}
-              </Menu.Item>
-            </>
-          ) : (
-            <>
-              <Menu.Item>
-                {({ active }) => (
-                  <Link
-                    to="/login"
-                    className={`${active ? 'bg-gray-50' : ''} flex items-center px-4 py-2 text-sm text-gray-700`}
-                  >
-                    <UserIcon className="mr-3 h-5 w-5" />
-                    Connexion
-                  </Link>
-                )}
-              </Menu.Item>
-              <Menu.Item>
-                {({ active }) => (
-                  <Link
-                    to="/register"
-                    className={`${active ? 'bg-gray-50' : ''} flex items-center px-4 py-2 text-sm text-gray-700`}
-                  >
-                    <UserIcon className="mr-3 h-5 w-5" />
-                    Inscription
-                  </Link>
-                )}
-              </Menu.Item>
-            </>
-          )}
-        </Menu.Items>
-      </Transition>
-    </Menu>
+      </button>
+      
+      <div className={`absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 transition-all duration-200 ${
+        userMenuOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible'
+      }`}>
+        {isAuthenticated && user ? (
+          <>
+            <Link
+              to="/dashboard"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-yellow-600/10 transition-colors duration-150"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <UserIcon className="mr-3 h-5 w-5" />
+              Dashboard
+            </Link>
+            <button
+              onClick={() => {
+                handleLogout();
+                setUserMenuOpen(false);
+              }}
+              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-yellow-600/10 transition-colors duration-150"
+            >
+              <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
+              Déconnexion
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              to="/login"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <UserIcon className="mr-3 h-5 w-5" />
+              Connexion
+            </Link>
+            <Link
+              to="/register"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <UserIcon className="mr-3 h-5 w-5" />
+              Inscription
+            </Link>
+          </>
+        )}
+      </div>
+    </div>
   );
 
   return (
@@ -274,7 +279,7 @@ function Header({ isScrolled, activeSection, scrollToSection }) {
               key={section.id}
               onClick={() => scrollToSection(section.id)}
               className={`
-                group relative flex items-center gap-x-1 text-1xl leading-6 transition-all duration-200 hover:cursor-pointer px-2
+                group relative flex items-center gap-x-1 text-1xl leading-6 transition-all duration-700 hover:cursor-pointer px-2
                 ${activeSection === section.id
                   ? 'text-yellow-600'
                   : 'text-stone-900 hover:text-yellow-600'
@@ -307,9 +312,9 @@ function Header({ isScrolled, activeSection, scrollToSection }) {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-gray-700 rounded-xl hover:bg-gray-100"
+                className="flex items-center gap-1 px-3 py-2 text-sm font-semibold text-gray-700 border rounded-2xl hover:bg-yellow-600/10 transition-all duration-700"
               >
-                <UserCircleIcon className="h-6 w-6 text-gray-600" />
+                <CiLogin className="h-6 w-6 text-gray-900" />
                 <span>Connexion</span>
               </Link>
             )}

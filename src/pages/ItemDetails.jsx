@@ -953,10 +953,10 @@ export default function ItemDetails() {
           {/* Status Header */}
           <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
             <div className="flex flex-wrap items-center gap-3">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${typeColors[item.type]}`}>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${typeColors[item.type]}`}>
                 {item.type === 'lost' ? 'Objet perdu' : 'Objet trouvé'}
               </span>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColors[item.status]}`}>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors[item.status]}`}>
                 {item.status === 'posted' ? 'Publié' : 
                  item.status === 'authenticating' ? 'En vérification' : 
                  item.status === 'authenticated' ? 'Authentifié' : 
